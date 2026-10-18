@@ -416,9 +416,10 @@
         <div class="level-section" data-comment-part="level:{{selectedLevel}}:skillFeat">
           <div class="section-header">
             <i class="section-header__icon fa-solid fa-wrench"></i>
-            {{localize "PF2E_LEVELER.SECTIONS.SKILL_FEAT"}}
+            {{localize "PF2E_LEVELER.SECTIONS.SKILL_FEAT"}}{{#if skillFeatRestriction}} ({{skillFeatRestriction.label}}){{/if}}
           </div>
           <div class="level-section__body">
+            {{#if skillFeatRestriction}}<div class="feat-slot__note">{{skillFeatRestriction.note}}</div>{{/if}}
             {{> featSlot feat=skillFeat category="skillFeats" level=selectedLevel}}
           </div>
         </div>

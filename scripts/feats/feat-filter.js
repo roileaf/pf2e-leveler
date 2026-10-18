@@ -121,17 +121,27 @@ export function filterBySkill(feats, skillSlugs, logic = 'or') {
   const normalizedSkills = skillSlugs.map((skill) => String(skill).toLowerCase());
   const skillLabels = getSkillLabels(normalizedSkills);
 
-  return feats.filter((feat) => {
-    const traits = (feat.system.traits?.value ?? []).map((trait) => String(trait).toLowerCase());
-    const prereqTexts = (feat.system.prerequisites?.value ?? []).map((p) => String(p.value ?? '').toLowerCase());
+  return feats.filter((feat) => matchesFeatSkills(feat, normalizedSkills, skillLabels, logic));
+}
 
-    const matchesSkill = (skill) => {
-      const label = skillLabels.get(skill) ?? skill;
-      return traits.includes(skill) || prereqTexts.some((text) => text.includes(skill) || text.includes(label));
-    };
+// Works for compendium feats and for feats stored in a plan (top-level traits, trimmed system data).
+export function featMatchesSkills(feat, skillSlugs, logic = 'or') {
+  const normalizedSkills = (skillSlugs ?? []).map((skill) => String(skill).toLowerCase());
+  if (normalizedSkills.length === 0) return true;
+  return matchesFeatSkills(feat, normalizedSkills, getSkillLabels(normalizedSkills), logic);
+}
 
-    return logic === 'and' ? normalizedSkills.every(matchesSkill) : normalizedSkills.some(matchesSkill);
-  });
+function matchesFeatSkills(feat, normalizedSkills, skillLabels, logic) {
+  const traits = (feat?.system?.traits?.value ?? feat?.traits ?? []).map((trait) => String(trait).toLowerCase());
+  const prereqTexts = (feat?.system?.prerequisites?.value ?? [])
+    .map((entry) => String((typeof entry === 'string' ? entry : entry?.value) ?? '').toLowerCase());
+
+  const matchesSkill = (skill) => {
+    const label = skillLabels.get(skill) ?? skill;
+    return traits.includes(skill) || prereqTexts.some((text) => text.includes(skill) || text.includes(label));
+  };
+
+  return logic === 'and' ? normalizedSkills.every(matchesSkill) : normalizedSkills.some(matchesSkill);
 }
 
 export function filterByGeneralSkillFeats(feats, showSkillFeats) {

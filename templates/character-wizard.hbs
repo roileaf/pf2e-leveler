@@ -1556,6 +1556,7 @@
         <div class="wizard-feat-slot-card">
           <div class="wizard-feat-slot-card__label">
             <i class="fa-solid fa-sparkles"></i> Cantrips ({{this.selectedCantrips.length}}/{{this.maxCantrips}})
+            {{#if this.preparedCantrips}}<span class="tag tag--muted tag--tiny">{{format "PF2E_LEVELER.SPELLS.PREPARED_COUNT" count=this.preparedCantripCount max=this.preparedCantrips}}</span>{{/if}}
           </div>
           <div class="wizard-spell-chips">
             {{#each this.grantedCantrips}}
@@ -1569,15 +1570,16 @@
             <span class="wizard-spell-chip">
               <img src="{{this.img}}" alt="" class="wizard-spell-chip__img">
               <span class="wizard-spell-chip__name" data-action="viewItem" data-uuid="{{this.uuid}}">{{this.name}}</span>
+              {{#if this.prepared}}<span class="tag tag--success tag--tiny">{{localize "PF2E_LEVELER.SPELLS.PREPARED_BADGE"}}</span>{{/if}}
               <i class="fa-solid fa-xmark wizard-spell-chip__remove" data-action="removeCantrip" data-target="{{../target}}" data-uuid="{{this.uuid}}"></i>
             </span>
             {{/each}}
           </div>
-          {{#unless this.cantripsFull}}
+          {{#if this.showCantripsBrowse}}
           <button type="button" class="wizard-feat-slot-card__browse" data-action="browseCantrips" data-target="{{this.target}}">
             <i class="fa-solid fa-magnifying-glass"></i> {{localize "PF2E_LEVELER.UI.BROWSE"}}
           </button>
-          {{/unless}}
+          {{/if}}
         </div>
         {{/if}}
 
@@ -1585,6 +1587,7 @@
         <div class="wizard-feat-slot-card">
           <div class="wizard-feat-slot-card__label">
             <i class="fa-solid fa-book-open"></i> 1st-Rank Spells ({{this.selectedRank1.length}}/{{this.maxRank1}})
+            {{#if this.preparedRank1}}<span class="tag tag--muted tag--tiny">{{format "PF2E_LEVELER.SPELLS.PREPARED_COUNT" count=this.preparedRank1Count max=this.preparedRank1}}</span>{{/if}}
           </div>
           <div class="wizard-spell-chips">
             {{#each this.grantedRank1s}}
@@ -1598,15 +1601,16 @@
             <span class="wizard-spell-chip">
               <img src="{{this.img}}" alt="" class="wizard-spell-chip__img">
               <span class="wizard-spell-chip__name" data-action="viewItem" data-uuid="{{this.uuid}}">{{this.name}}</span>
+              {{#if this.prepared}}<span class="tag tag--success tag--tiny">{{localize "PF2E_LEVELER.SPELLS.PREPARED_BADGE"}}</span>{{/if}}
               <i class="fa-solid fa-xmark wizard-spell-chip__remove" data-action="removeRank1" data-target="{{../target}}" data-uuid="{{this.uuid}}"></i>
             </span>
             {{/each}}
           </div>
-          {{#unless this.rank1Full}}
+          {{#if this.showRank1Browse}}
           <button type="button" class="wizard-feat-slot-card__browse" data-action="browseRank1" data-target="{{this.target}}">
             <i class="fa-solid fa-magnifying-glass"></i> {{localize "PF2E_LEVELER.UI.BROWSE"}}
           </button>
-          {{/unless}}
+          {{/if}}
         </div>
         {{/if}}
 

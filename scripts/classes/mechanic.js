@@ -1,3 +1,4 @@
+const INGENUITY_NAME = "Mechanic's Ingenuity";
 const INGENUITY_LEVELS = [3, 7, 15];
 const INGENUITY_SKILLS = ['computers', 'crafting'];
 
@@ -16,14 +17,14 @@ export const MECHANIC = {
   },
   skillIncreaseSchedule: [3, 5, 7, 9, 11, 13, 15, 17, 19],
   abilityBoostSchedule: [5, 10, 15, 20],
-  skillFeatRestriction: { levels: INGENUITY_LEVELS, skills: INGENUITY_SKILLS },
+  skillFeatRestriction: { label: INGENUITY_NAME, levels: INGENUITY_LEVELS, skills: INGENUITY_SKILLS },
 
   classFeatures: [
     { level: 3, name: 'Mobile Exocortex', key: 'mobile-exocortex' },
     { level: 3, name: 'Will Expertise', key: 'will-expertise' },
     {
       level: 3,
-      name: "Mechanic's Ingenuity",
+      name: INGENUITY_NAME,
       key: 'mechanic-s-ingenuity',
       additionalSkillIncrease: { levels: INGENUITY_LEVELS, allowedSkills: INGENUITY_SKILLS },
     },

@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.12.3
+
+### Added
+
+- **Prepare spells during character creation** - Prepared casters (Wizard, Witch, Magus, Necromancer, Technomancer and others) get a Prepare button next to Select in the creation spell browser. Preparing a spell adds it to the spellbook and fills one of your daily slots (for example 5 cantrips and 1 1st-rank spell for a level 1 Magus). A counter shows how many slots are prepared, already-chosen spells can be prepared or unprepared from the sidebar, and the prepared spells are slotted on the actor when creation is applied
+
+### Fixed
+
+- **Mechanic's Ingenuity skill feats** - The level planner now labels the Mechanic's Ingenuity skill feat slots at levels 3, 7, and 15 and flags a feat that isn't a Computers or Crafting skill feat
+
 ## 3.12.2
 
 ### Fixed

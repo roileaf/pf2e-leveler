@@ -1,6 +1,7 @@
 import { INITIAL_SKILL_RETRAIN_SOURCE_TYPE, PROFICIENCY_RANK_NAMES, PROFICIENCY_RANKS, SUBCLASS_TAGS, WEALTH_MODES, CHARACTER_WEALTH, expandPermanentItemSlots, MODULE_ID } from '../../constants.js';
-import { getChoicesForLevel, getSkillIncreaseChoiceSource, getSkillIncreaseChoices } from '../../classes/progression.js';
+import { getChoicesForLevel, getSkillFeatRestriction, getSkillIncreaseChoiceSource, getSkillIncreaseChoices } from '../../classes/progression.js';
 import { ClassRegistry } from '../../classes/registry.js';
+import { format } from '../../utils/i18n.js';
 import { getRunicRepertoireIncrease } from '../../classes/runesmith.js';
 import { getLevelData } from '../../plan/plan-model.js';
 import {
@@ -37,6 +38,20 @@ const ADOPTED_ANCESTRY_ACCESS_STATUSES = new Set([
   GUIDANCE_STATUSES.RECOMMENDED,
   GUIDANCE_STATUSES.NOT_RECOMMENDED,
 ]);
+
+function buildSkillFeatRestrictionContext(restriction) {
+  if (!restriction) return null;
+  const skills = restriction.skills
+    .map((skill) => {
+      const label = getActiveSkillConfigEntry(skill)?.label;
+      return label ? game.i18n.localize(label) : skill.charAt(0).toUpperCase() + skill.slice(1);
+    })
+    .join(' / ');
+  return {
+    label: restriction.label,
+    note: format('SECTIONS.SKILL_FEAT_RESTRICTION', { source: restriction.label, skills }),
+  };
+}
 
 export async function buildLevelContext(planner, classDef, options) {
   if (!planner.plan || !classDef) return {};
@@ -117,6 +132,7 @@ export async function buildLevelContext(planner, classDef, options) {
     classFeatChoiceSets,
     showSkillFeat: choiceTypes.has('skillFeat'),
     skillFeat: skillFeatWithChoiceSets,
+    skillFeatRestriction: buildSkillFeatRestrictionContext(getSkillFeatRestriction(classDef, level)),
     showGeneralFeat: choiceTypes.has('generalFeat'),
     generalFeat,
     generalFeatChoiceSets,

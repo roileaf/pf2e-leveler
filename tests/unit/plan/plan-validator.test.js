@@ -5,6 +5,7 @@ import { DRUID } from '../../../scripts/classes/druid.js';
 import { SORCERER } from '../../../scripts/classes/sorcerer.js';
 import { WIZARD } from '../../../scripts/classes/wizard.js';
 import { THAUMATURGE } from '../../../scripts/classes/thaumaturge.js';
+import { MECHANIC } from '../../../scripts/classes/mechanic.js';
 import { validatePlan, validateLevel } from '../../../scripts/plan/plan-validator.js';
 import * as buildState from '../../../scripts/plan/build-state.js';
 import {
@@ -25,6 +26,7 @@ beforeAll(() => {
   ClassRegistry.register(SORCERER);
   ClassRegistry.register(WIZARD);
   ClassRegistry.register(THAUMATURGE);
+  ClassRegistry.register(MECHANIC);
 });
 
 describe('validateLevel', () => {
@@ -46,6 +48,32 @@ describe('validateLevel', () => {
     setLevelFeat(plan, 2, 'skillFeats', { uuid: 'y', name: 'Y', slug: 'y' });
     const result = validateLevel(plan, ALCHEMIST, 2);
     expect(result.status).toBe(PLAN_STATUS.COMPLETE);
+  });
+
+  test("restricts the Mechanic's Ingenuity skill feat to Computers or Crafting", () => {
+    const skillFeat = (name, prerequisite) => ({
+      uuid: name,
+      name,
+      slug: name.toLowerCase().replace(/\s+/g, '-'),
+      traits: ['general', 'skill'],
+      system: { prerequisites: { value: [{ value: prerequisite }] } },
+      coreMetadataVersion: 1,
+    });
+    const skillFeatIssue = (plan) => validateLevel(plan, MECHANIC, 3).issues
+      .find((issue) => issue.message?.includes("skill feat (Mechanic's Ingenuity)"));
+    const plan = createPlan('mechanic');
+
+    setLevelFeat(plan, 3, 'skillFeats', skillFeat('Cat Fall', 'trained in Acrobatics'));
+    expect(skillFeatIssue(plan)).toEqual(expect.objectContaining({
+      severity: 'error',
+      message: "Cat Fall must be a Computers or Crafting skill feat (Mechanic's Ingenuity)",
+    }));
+
+    setLevelFeat(plan, 3, 'skillFeats', skillFeat('Quick Repair', 'trained in Crafting'));
+    expect(skillFeatIssue(plan)).toBeUndefined();
+
+    setLevelFeat(plan, 4, 'skillFeats', skillFeat('Cat Fall', 'trained in Acrobatics'));
+    expect(validateLevel(plan, MECHANIC, 4).issues.some((issue) => issue.message?.includes('skill feat ('))).toBe(false);
   });
 
   test('requires and restricts the Thaumaturgic Expertise skill increase', () => {

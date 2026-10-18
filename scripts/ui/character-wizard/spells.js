@@ -172,7 +172,8 @@ async function buildCasterSpellSection(wizard, { target, classEntry, subclassEnt
 
   const rank1Spells = allSpells.filter((spell) => !spell.traits.includes('cantrip') && spell.level === 1 && matchesTradition(spell) && matchesRarity(spell) && !selectedUuids.has(spell.uuid));
 
-  setSpellSelectionCache(wizard, target, maxCantrips, maxRank1);
+  const preparedLimits = getPreparedSlotLimits(classDef, level1Slots, sectionData.flexiblePreparation === true && supportsFlexiblePreparation(classDef));
+  setSpellSelectionCache(wizard, target, { maxCantrips, maxRank1, ...preparedLimits });
   const selectedCantrips = sectionData.spells?.cantrips ?? [];
   const selectedRank1 = sectionData.spells?.rank1 ?? [];
   const cantripsFull = selectedCantrips.length >= maxCantrips;
@@ -206,6 +207,11 @@ async function buildCasterSpellSection(wizard, { target, classEntry, subclassEnt
     maxRank1,
     cantripsFull,
     rank1Full,
+    ...preparedLimits,
+    preparedCantripCount: selectedCantrips.filter((spell) => spell.prepared).length,
+    preparedRank1Count: selectedRank1.filter((spell) => spell.prepared).length,
+    showCantripsBrowse: !cantripsFull || preparedLimits.preparedCantrips > 0,
+    showRank1Browse: !rank1Full || preparedLimits.preparedRank1 > 0,
     tradition,
     className: classEntry?.name ?? 'Class',
     showSpellRarityFilters: !restrictToCommonSpellOptions,
@@ -249,9 +255,19 @@ function projectSpellSectionData(data, target = 'primary') {
   };
 }
 
-function setSpellSelectionCache(wizard, target, maxCantrips, maxRank1) {
+function getPreparedSlotLimits(classDef, slots, flexible) {
+  if (classDef.spellcasting.type !== 'prepared') return { preparedCantrips: 0, preparedRank1: 0 };
+  const count = (value) => Number(Array.isArray(value) ? value[0] : (value ?? 0));
+  return {
+    preparedCantrips: count(slots.cantrips),
+    preparedRank1: flexible ? 0 : count(slots[1]),
+  };
+}
+
+function setSpellSelectionCache(wizard, target, limits) {
+  const { maxCantrips, maxRank1 } = limits;
   wizard._cachedSpellSelectionLimits ??= {};
-  wizard._cachedSpellSelectionLimits[target] = { maxCantrips, maxRank1 };
+  wizard._cachedSpellSelectionLimits[target] = limits;
 
   if (target === 'primary') {
     wizard._cachedMaxCantrips = maxCantrips;

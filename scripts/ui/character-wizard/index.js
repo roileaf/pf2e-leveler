@@ -1,7 +1,7 @@
 import { CLASS_SUBCLASS_TYPES, MODULE_ID, MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID, SKILLS, ATTRIBUTES, SUBCLASS_TAGS, ANCESTRY_TRAIT_ALIASES, WEALTH_MODES, CHARACTER_WEALTH, PERMANENT_ITEM_TYPES, expandPermanentItemSlots } from '../../constants.js';
 import { ClassRegistry } from '../../classes/registry.js';
 import { ensureClassItemRegistered } from '../../classes/ensure.js';
-import { createCreationData, getClassSelectionData, normalizeCreationData, setAncestry, setHeritage, setMixedAncestry, setBackground, setClass, setDualClass, setImplement, setSubconsciousMind, setThesis, setDeity, setSkills, setLanguages, setLores, setSelectedLoreSkills, addSpell, removeSpell, setGrantedFeatSections, setAncestryFeat, setAncestryParagonFeat, setClassFeat, setDualClassFeat, setSkillFeat, setFeatChoice, getGrantedFeatChoiceValues, upsertCreationFeatGrant, addEquipment, removeCreationFeatGrantSelection, setPermanentItem } from '../../creation/creation-model.js';
+import { createCreationData, getClassSelectionData, normalizeCreationData, setAncestry, setHeritage, setMixedAncestry, setBackground, setClass, setDualClass, setImplement, setSubconsciousMind, setThesis, setDeity, setSkills, setLanguages, setLores, setSelectedLoreSkills, addSpell, removeSpell, setSpellPrepared, setGrantedFeatSections, setAncestryFeat, setAncestryParagonFeat, setClassFeat, setDualClassFeat, setSkillFeat, setFeatChoice, getGrantedFeatChoiceValues, upsertCreationFeatGrant, addEquipment, removeCreationFeatGrantSelection, setPermanentItem } from '../../creation/creation-model.js';
 import { buildFeatGrantRequirements, getFeatGrantCompletion, getFeatGrantSelections } from '../../plan/feat-grants.js';
 import { getCreationData, saveCreationData, exportCreationData, importCreationData } from '../../creation/creation-store.js';
 import { applyCreation } from '../../creation/apply-creation.js';
@@ -1565,14 +1565,15 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     const limits = this._cachedSpellSelectionLimits?.[target] ?? {};
     const max = isCantrip ? (limits.maxCantrips ?? null) : (limits.maxRank1 ?? null);
     const remaining = max != null ? max - currentSpells.length : null;
+    const prepareMax = isCantrip ? (limits.preparedCantrips ?? 0) : (limits.preparedRank1 ?? 0);
 
     import('../spell-picker.js').then(({ SpellPicker }) => {
       const picker = new SpellPicker(
         this.actor,
         tradition,
         rank,
-        (spells) => {
-          for (const spell of spells) addSpell(this.data, spell, isCantrip, target);
+        (spells, { preparedUuids } = {}) => {
+          for (const spell of spells) addSpell(this.data, spell, isCantrip, target, { prepared: preparedUuids?.has(spell.uuid) === true });
           this._saveAndRender();
         },
         {
@@ -1587,6 +1588,14 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
             await this.render({ force: true, parts: ['wizard'] });
           },
           maxSelect: remaining,
+          prepare: {
+            max: prepareMax,
+            onToggleSelected: async (spell, prepared) => {
+              setSpellPrepared(this.data, spell?.uuid, isCantrip, prepared, target);
+              await saveCreationData(this.actor, this.data);
+              await this.render({ force: true, parts: ['wizard'] });
+            },
+          },
         },
       );
       this._renderPickerInFront(picker);

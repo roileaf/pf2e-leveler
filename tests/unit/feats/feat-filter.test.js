@@ -1,4 +1,5 @@
 import {
+  featMatchesSkills,
   collectAdditionalArchetypeFeatLevels,
   filterFeatsByCategory,
   filterByArchetypeRestrictions,
@@ -1541,5 +1542,15 @@ describe('sortFeats', () => {
     const result = sortFeats(feats, 'ALPHA_DESC');
     expect(result[0].name).toBe('Zap');
     expect(result[2].name).toBe('Alpha');
+  });
+});
+
+describe('featMatchesSkills', () => {
+  test('matches stored plan feats by trait or prerequisite text', () => {
+    const storedFeat = { traits: ['general', 'skill'], system: { prerequisites: { value: [{ value: 'trained in Computers' }] } } };
+    expect(featMatchesSkills(storedFeat, ['computers', 'crafting'])).toBe(true);
+    expect(featMatchesSkills({ traits: ['skill'], system: { prerequisites: { value: ['expert in Acrobatics'] } } }, ['computers', 'crafting'])).toBe(false);
+    expect(featMatchesSkills({ traits: ['crafting'] }, ['crafting'])).toBe(true);
+    expect(featMatchesSkills({ traits: [] }, [])).toBe(true);
   });
 });

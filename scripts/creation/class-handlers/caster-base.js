@@ -212,8 +212,9 @@ export class CasterBaseHandler extends BaseClassHandler {
     const actorLevel = Number(actor.system?.details?.level?.value ?? 1);
     const remasteredMagus = classDef?.slug === 'magus' && isRemasteredMagus(actor, data.class);
     const currentSlots = classDef?.spellcasting?.slots?.[actorLevel] ?? classDef?.spellcasting?.slots?.[1] ?? null;
+    let slotUpdate = null;
     if (currentSlots) {
-      const slotUpdate = this._buildPrimarySlotUpdate(entry, flexible ? getFlexibleSpellSlots(currentSlots, actorLevel) : currentSlots, classDef);
+      slotUpdate = this._buildPrimarySlotUpdate(entry, flexible ? getFlexibleSpellSlots(currentSlots, actorLevel) : currentSlots, classDef);
       if (flexible) {
         slotUpdate['system.slots.slot10.max'] = 0;
         slotUpdate['system.slots.slot10.value'] = 0;
@@ -226,6 +227,7 @@ export class CasterBaseHandler extends BaseClassHandler {
       await this._ensureMagusStudiousEntry(actor, data, classDef, actorLevel);
     }
 
+    const preparedIds = { 0: [], 1: [] };
     for (const spellEntry of allSpells) {
       const spell = await fromUuid(spellEntry.uuid).catch(() => null);
       if (!spell) continue;
@@ -235,7 +237,13 @@ export class CasterBaseHandler extends BaseClassHandler {
       if (!traits.includes('cantrip') && rank > 1) continue;
       const spellData = foundry.utils.deepClone(spell.toObject());
       spellData.system.location = { value: entry.id };
-      await actor.createEmbeddedDocuments('Item', [spellData]);
+      const [created] = await actor.createEmbeddedDocuments('Item', [spellData]) ?? [];
+      if (spellEntry.prepared && created?.id) preparedIds[traits.includes('cantrip') ? 0 : 1].push(created.id);
+    }
+
+    if (prepared === 'prepared') {
+      const preparedUpdate = buildPreparedSlotsUpdate(entry, preparedIds, slotUpdate, { flexible });
+      if (preparedUpdate) await actor.updateEmbeddedDocuments('Item', [preparedUpdate]);
     }
   }
 
@@ -469,6 +477,17 @@ function getItemSourceIds(item) {
   ]
     .map((value) => String(value ?? '').trim())
     .filter(Boolean);
+}
+
+function buildPreparedSlotsUpdate(entry, preparedIds, slotUpdate, { flexible = false } = {}) {
+  const update = { _id: entry.id };
+  for (const [rank, ids] of Object.entries(preparedIds)) {
+    if (ids.length === 0 || (flexible && Number(rank) > 0)) continue;
+    const max = Number(slotUpdate?.[`system.slots.slot${rank}.max`] ?? entry.system?.slots?.[`slot${rank}`]?.max ?? ids.length);
+    if (max <= 0) continue;
+    update[`system.slots.slot${rank}.prepared`] = Array.from({ length: max }, (_, index) => ({ id: ids[index] ?? null, expended: false }));
+  }
+  return Object.keys(update).length > 1 ? update : null;
 }
 
 function getMagusStudiousRank(level) {

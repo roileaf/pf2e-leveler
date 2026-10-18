@@ -1,6 +1,7 @@
 import { INITIAL_SKILL_RETRAIN_SOURCE_TYPE, PLAN_STATUS, MIN_PLAN_LEVEL, MAX_LEVEL, SPELLBOOK_CLASSES, SUBCLASS_TAGS, MODULE_ID } from '../constants.js';
 import { ClassRegistry } from '../classes/registry.js';
-import { getChoicesForLevel, getGradualBoostGroupLevels, getSkillIncreaseSelection } from '../classes/progression.js';
+import { getChoicesForLevel, getGradualBoostGroupLevels, getSkillFeatRestriction, getSkillIncreaseSelection } from '../classes/progression.js';
+import { featMatchesSkills } from '../feats/feat-filter.js';
 import { resolveSubclassSpells } from '../data/subclass-spells.js';
 import { getIntelligenceBenefitCount } from './build-state.js';
 import { getSpellbookBonusCantripSelectionCount } from './spellbook-feats.js';
@@ -242,7 +243,7 @@ function validateChoice(choice, levelData, level, plan, classDef, options, actor
     case 'classFeat':
       return validateClassFeat(levelData.classFeats, level, actor);
     case 'skillFeat':
-      return validateFeatSlot(levelData.skillFeats, 'Skill Feat');
+      return validateSkillFeat(levelData.skillFeats, getSkillFeatRestriction(classDef, level));
     case 'generalFeat':
       return validateFeatSlot(levelData.generalFeats, 'General Feat');
     case 'ancestryFeat':
@@ -337,6 +338,18 @@ function validateFeatSlot(feats, label) {
     return { severity: 'error', message: `${label} not selected` };
   }
   return null;
+}
+
+function validateSkillFeat(feats, restriction) {
+  const slotIssue = validateFeatSlot(feats, 'Skill Feat');
+  if (slotIssue || !restriction) return slotIssue;
+
+  const feat = feats[0];
+  // Feats stored before core metadata existed carry no prerequisites to check against.
+  if (feat?.coreMetadataVersion == null || featMatchesSkills(feat, restriction.skills)) return null;
+
+  const skills = restriction.skills.map((skill) => skill.charAt(0).toUpperCase() + skill.slice(1)).join(' or ');
+  return { severity: 'error', message: `${feat.name ?? 'Skill Feat'} must be a ${skills} skill feat (${restriction.label})` };
 }
 
 function validateClassFeat(feats, level, actor) {

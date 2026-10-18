@@ -1,7 +1,7 @@
 import { MODULE_ID, MIN_PLAN_LEVEL, MAX_LEVEL, PLAN_STATUS, PERMANENT_ITEM_TYPES, PROFICIENCY_RANK_NAMES } from '../../constants.js';
 import { ensureActorClassRegistered, ensureClassItemRegistered, ensureClassRegistry } from '../../classes/ensure.js';
 import { ClassRegistry } from '../../classes/registry.js';
-import { getChoicesForLevel, getGradualBoostGroupLevels, getLevelSummary } from '../../classes/progression.js';
+import { getChoicesForLevel, getGradualBoostGroupLevels, getLevelSummary, getSkillFeatRestriction } from '../../classes/progression.js';
 import { createEmptyLevelData, createPlan, getLevelData, setLevelBoosts, setLevelFeat, setLevelSkillIncrease, toggleLevelIntBonusSkill, toggleLevelIntBonusLanguage, addLevelSpell, addLevelReminder, clearLevelReminders, resetLevelData, addLevelFeatRetrain, addLevelSkillRetrain, addLevelCustomFeat, removeLevelCustomFeat, addLevelCustomSkillIncrease, removeLevelCustomSkillIncrease, addLevelCustomSpell, removeLevelCustomSpell, addLevelCustomSpellEntry, removeLevelCustomSpellEntry, setLevelEquipmentSlot, clearLevelEquipmentSlot, addLevelCustomEquipment, removeLevelCustomEquipment, removeLevelSpell, setLevelSpellSwap, setLevelSignatureSpell, upsertLevelFeatGrant } from '../../plan/plan-model.js';
 import { getSpellbookBonusCantripSelectionCount } from '../../plan/spellbook-feats.js';
 import { buildFeatGrantRequirements, buildPlanFormulaProgressionRequirements } from '../../plan/feat-grants.js';
@@ -2596,8 +2596,8 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (investigatorLimitations.requiredSkills) return investigatorLimitations;
 
     const classSlug = String(buildState?.class?.slug ?? this.actor?.class?.slug ?? '').toLowerCase();
-    const restriction = ClassRegistry.get(classSlug, this.actor)?.skillFeatRestriction;
-    if (!restriction?.levels?.includes(level)) return {};
+    const restriction = getSkillFeatRestriction(ClassRegistry.get(classSlug, this.actor), level);
+    if (!restriction) return {};
     return {
       requiredSkills: [...restriction.skills],
       selectedSkills: [...restriction.skills],

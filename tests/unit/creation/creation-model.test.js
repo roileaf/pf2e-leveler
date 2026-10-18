@@ -1,10 +1,12 @@
 import {
+  addSpell,
   createCreationData,
   getCreationLoreSkillNames,
   setClass,
   setDualClass,
   setFeatChoice,
   setMythicCalling,
+  setSpellPrepared,
   setSubconsciousMind,
 } from '../../../scripts/creation/creation-model.js';
 
@@ -101,5 +103,21 @@ describe('setFeatChoice', () => {
       },
     });
     expect(data.dualCurriculumSpells).toEqual({ cantrips: [], rank1: [] });
+  });
+});
+
+describe('creation spell preparation', () => {
+  test('marks selected spells prepared per target and clears the flag when unprepared', () => {
+    const data = createCreationData();
+    addSpell(data, { uuid: 'shield', name: 'Shield', img: 'shield.webp' }, true, 'primary', { prepared: true });
+    addSpell(data, { uuid: 'grease', name: 'Grease', img: 'grease.webp' }, false, 'secondary');
+    expect(data.spells.cantrips[0]).toEqual({ uuid: 'shield', name: 'Shield', img: 'shield.webp', prepared: true });
+
+    setSpellPrepared(data, 'grease', false, true, 'secondary');
+    setSpellPrepared(data, 'shield', true, false);
+    setSpellPrepared(data, 'missing', true, true);
+
+    expect(data.dualSpells.rank1[0].prepared).toBe(true);
+    expect(data.spells.cantrips[0]).not.toHaveProperty('prepared');
   });
 });

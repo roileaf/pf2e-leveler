@@ -14,6 +14,11 @@
             {{#if this.displayRankLabel}}
             <span class="tag tag--muted tag--tiny">{{this.displayRankLabel}}</span>
             {{/if}}
+            {{#if ../prepareEnabled}}{{#if this.canTogglePrepared}}
+            <button type="button" class="spell-picker__selected-sidebar-remove spell-picker__selected-sidebar-prepare {{#if this.prepared}}active{{/if}}" data-action="togglePreparedSelected" data-index="{{this.index}}" data-tooltip="{{#if this.prepared}}{{localize 'PF2E_LEVELER.SPELLS.UNPREPARE_HINT'}}{{else}}{{localize 'PF2E_LEVELER.SPELLS.PREPARE_HINT'}}{{/if}}" {{#unless this.prepared}}{{#unless ../canPrepareMore}}disabled{{/unless}}{{/unless}}>
+              <i class="{{#if this.prepared}}fa-solid fa-circle-check{{else}}fa-regular fa-circle{{/if}}" aria-hidden="true"></i>
+            </button>
+            {{/if}}{{/if}}
             {{#if this.canRemove}}
             <button type="button" class="spell-picker__selected-sidebar-remove" data-action="removeSelectedSpell" data-index="{{this.index}}" data-tooltip="{{localize 'PF2E_LEVELER.UI.REMOVE'}}">
               <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -288,6 +293,9 @@
       <div class="picker__results-header">
         <div class="picker__results-label">{{capitalize tradition}} {{localize "PF2E_LEVELER.SETTINGS.COMPENDIUM_CATEGORIES.SPELLS"}}</div>
         <div class="spell-picker__results-meta">
+          {{#if prepareEnabled}}
+          <div class="spell-picker__prepared-count" data-tooltip="{{localize 'PF2E_LEVELER.SPELLS.PREPARE_HINT'}}">{{format "PF2E_LEVELER.SPELLS.PREPARED_COUNT" count=preparedCount max=prepareMax}}</div>
+          {{/if}}
           {{#if multiSelect}}
           <div class="spell-picker__selected-count">{{format "PF2E_LEVELER.SPELLS.SELECTED_COUNT" count=selectedCount}}</div>
           <button type="button" class="spell-option__select-btn spell-picker__bulk-btn" data-action="toggleSelectAll" {{#unless filteredCount}}disabled{{/unless}}>
@@ -343,6 +351,11 @@
                 {{localize "PF2E_LEVELER.SPELLS.SELECT"}}
               {{/if}}
             </button>
+            {{#if ../prepareEnabled}}
+            <button type="button" class="spell-option__select-btn spell-option__prepare-btn {{#if this._levelerPrepared}}active{{/if}}" data-action="prepareSpell" data-uuid="{{this.uuid}}" data-tooltip="{{localize 'PF2E_LEVELER.SPELLS.PREPARE_HINT'}}" {{#if this.selectionBlocked}}disabled{{else}}{{#unless this._levelerPrepared}}{{#unless ../canPrepareMore}}disabled{{/unless}}{{/unless}}{{/if}}>
+              {{#if this._levelerPrepared}}{{localize "PF2E_LEVELER.SPELLS.PREPARED"}}{{else}}{{localize "PF2E_LEVELER.SPELLS.PREPARE"}}{{/if}}
+            </button>
+            {{/if}}
           </div>
         </div>
         {{else}}

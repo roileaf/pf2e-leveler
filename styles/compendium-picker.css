@@ -952,3 +952,29 @@
     overflow-y: auto;
   }
 }
+
+.pf2e-leveler .spell-option__prepare-btn:not(.active):not(:disabled) {
+  background: transparent;
+  border: 1px solid var(--leveler-accent);
+  color: var(--leveler-accent);
+}
+
+.pf2e-leveler .spell-option__prepare-btn:not(.active):hover:not(:disabled) {
+  background: var(--leveler-accent);
+  color: var(--leveler-bg);
+}
+
+.pf2e-leveler .spell-picker__selected-sidebar-prepare.active {
+  color: var(--leveler-success);
+}
+
+.pf2e-leveler .spell-picker__selected-sidebar-prepare:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pf2e-leveler .spell-picker__prepared-count {
+  font-size: var(--leveler-font-sm);
+  color: var(--leveler-success);
+  white-space: nowrap;
+}

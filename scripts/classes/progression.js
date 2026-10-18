@@ -117,6 +117,11 @@ function addClassFeatureSkillIncreaseChoices(choices, classDef, level) {
   }
 }
 
+export function getSkillFeatRestriction(classDef, level) {
+  const restriction = classDef?.skillFeatRestriction;
+  return restriction?.levels?.includes(level) ? restriction : null;
+}
+
 export function normalizeSkillIncreaseSource(source) {
   return String(source ?? '').trim();
 }

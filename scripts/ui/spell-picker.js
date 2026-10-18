@@ -66,6 +66,9 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this.selectedSpellUuids = new Set();
     this.selectedSpells = options.selectedSpells ?? [];
     this.maxSelect = options.maxSelect ?? null;
+    this.prepareMax = this.multiSelect ? Number(options.prepare?.max ?? 0) : 0;
+    this.onTogglePreparedSelected = typeof options.prepare?.onToggleSelected === 'function' ? options.prepare.onToggleSelected : null;
+    this.preparedSpellUuids = new Set(this.selectedSpells.filter((spell) => spell?.prepared === true).map((spell) => spell.uuid));
     this.selectedRanks = new Set();
     this.selectedTraditions = new Set();
     this.lockedTraditions = new Set(tradition && tradition !== 'any' ? [tradition.toLowerCase()] : []);
@@ -217,6 +220,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       remainingSlots: this.maxSelect != null ? this.maxSelect - this.selectedSpellUuids.size : null,
       remasterOnly: this.remasterOnly,
       hideGunsTech: this.hideGunsTech,
+      ...this._getPrepareContext(),
     };
   }
 
@@ -362,6 +366,21 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
             this.close();
           }
         }
+        return;
+      }
+
+      if (action === 'prepareSpell') {
+        e.preventDefault();
+        e.stopPropagation();
+        this._togglePreparedSpell(uuid);
+        this._updateSelectionUI();
+        return;
+      }
+
+      if (action === 'togglePreparedSelected') {
+        e.preventDefault();
+        e.stopPropagation();
+        await this._togglePreparedSelected(Number(target.dataset.index));
         return;
       }
 
@@ -610,6 +629,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       remainingSlots: this.maxSelect != null ? this.maxSelect - this.selectedSpellUuids.size : null,
       remasterOnly: this.remasterOnly,
       hideGunsTech: this.hideGunsTech,
+      ...this._getPrepareContext(),
     });
 
     const temp = document.createElement('div');
@@ -742,10 +762,47 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (spell?.guidanceSelectionBlocked) return;
     if (this.selectedSpellUuids.has(uuid)) {
       this.selectedSpellUuids.delete(uuid);
+      this.preparedSpellUuids.delete(uuid);
     } else {
       if (this.maxSelect != null && this.selectedSpellUuids.size >= this.maxSelect) return;
       this.selectedSpellUuids.add(uuid);
     }
+  }
+
+  _canPrepareMore() {
+    return this.preparedSpellUuids.size < this.prepareMax;
+  }
+
+  _togglePreparedSpell(uuid) {
+    if (!uuid || this.prepareMax <= 0) return;
+    if (this.preparedSpellUuids.has(uuid)) {
+      this.preparedSpellUuids.delete(uuid);
+      return;
+    }
+    if (!this._canPrepareMore()) return;
+    if (!this.selectedSpellUuids.has(uuid)) this._toggleSelectedSpell(uuid);
+    if (this.selectedSpellUuids.has(uuid)) this.preparedSpellUuids.add(uuid);
+  }
+
+  async _togglePreparedSelected(index) {
+    const spell = this.selectedSpells[index];
+    if (!spell || !this.onTogglePreparedSelected) return;
+    const prepared = !this.preparedSpellUuids.has(spell.uuid);
+    if (prepared && !this._canPrepareMore()) return;
+    await this.onTogglePreparedSelected(spell, prepared);
+    spell.prepared = prepared;
+    if (prepared) this.preparedSpellUuids.add(spell.uuid);
+    else this.preparedSpellUuids.delete(spell.uuid);
+    await this.render(true);
+  }
+
+  _getPrepareContext() {
+    return {
+      prepareEnabled: this.prepareMax > 0,
+      canPrepareMore: this._canPrepareMore(),
+      preparedCount: this.preparedSpellUuids.size,
+      prepareMax: this.prepareMax,
+    };
   }
 
   _toggleSelectAllVisible() {
@@ -756,6 +813,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const uuid of visibleUuids) {
       if (allVisibleSelected) {
         this.selectedSpellUuids.delete(uuid);
+        this.preparedSpellUuids.delete(uuid);
       } else {
         if (this.maxSelect != null && this.selectedSpellUuids.size >= this.maxSelect) break;
         this.selectedSpellUuids.add(uuid);
@@ -769,7 +827,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       .filter((spell) => this.selectedSpellUuids.has(spell.uuid) && spell.guidanceSelectionBlocked !== true)
       .sort((a, b) => a.name.localeCompare(b.name));
     if (selectedSpells.length === 0) return;
-    await this.onSelect(selectedSpells);
+    await this.onSelect(selectedSpells, { preparedUuids: new Set(this.preparedSpellUuids) });
     this.close();
   }
 
@@ -798,6 +856,24 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
               ? game.i18n.localize('PF2E_LEVELER.UI.SELECTED')
               : game.i18n.localize('PF2E_LEVELER.SPELLS.SELECT');
       }
+      const prepareButton = option.querySelector('[data-action="prepareSpell"]');
+      if (prepareButton) {
+        const prepared = this.preparedSpellUuids.has(uuid);
+        prepareButton.classList.toggle('active', prepared);
+        prepareButton.disabled = !selectable || (!prepared && (!this._canPrepareMore() || (!selected && atMax)));
+        prepareButton.textContent = game.i18n.localize(prepared ? 'PF2E_LEVELER.SPELLS.PREPARED' : 'PF2E_LEVELER.SPELLS.PREPARE');
+      }
+    }
+
+    const preparedCountEl = el.querySelector('.spell-picker__prepared-count');
+    if (preparedCountEl) {
+      preparedCountEl.textContent = game.i18n.format('PF2E_LEVELER.SPELLS.PREPARED_COUNT', {
+        count: this.preparedSpellUuids.size,
+        max: this.prepareMax,
+      });
+    }
+    for (const button of el.querySelectorAll('[data-action="togglePreparedSelected"]')) {
+      button.disabled = !button.classList.contains('active') && !this._canPrepareMore();
     }
 
     const visibleCount = this._getVisibleSpellUuids().length;
@@ -1026,6 +1102,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       guidanceSelectionTooltip: spell.guidanceSelectionTooltip ?? '',
       selectionBlocked: alreadyTaken || spell.guidanceSelectionBlocked === true,
       _levelerSelected: this.selectedSpellUuids.has(spell.uuid),
+      _levelerPrepared: this.preparedSpellUuids.has(spell.uuid),
       alreadyTaken,
     };
   }
@@ -1040,6 +1117,8 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
         ? game.i18n.format('PF2E_LEVELER.SPELLS.RANK_NUMBER', { rank: displayRank })
         : null,
       canRemove: this.onRemoveSelected != null,
+      prepared: this.preparedSpellUuids.has(spell?.uuid),
+      canTogglePrepared: this.onTogglePreparedSelected != null,
     };
   }
 
@@ -1049,6 +1128,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.onRemoveSelected(spell, index);
     this.selectedSpells.splice(index, 1);
     this.selectedSpellUuids.delete(spell?.uuid);
+    this.preparedSpellUuids.delete(spell?.uuid);
     if (this.maxSelect != null) this.maxSelect += 1;
     await this.render(true);
   }

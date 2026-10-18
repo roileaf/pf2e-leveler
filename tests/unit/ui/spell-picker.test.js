@@ -607,8 +607,104 @@ describe('SpellPicker', () => {
 
     expect(onSelect).toHaveBeenCalledWith([
       expect.objectContaining({ uuid: 'magic-missile', name: 'Magic Missile' }),
-    ]);
+    ], { preparedUuids: new Set() });
     expect(picker.close).toHaveBeenCalled();
+  });
+
+  test('prepare selects the spell, respects the prepared slot cap, and reports prepared spells', async () => {
+    game.packs.get = jest.fn(() => ({
+      metadata: { packageName: 'pf2e' },
+      getDocuments: jest.fn(async () => [
+        makeSpell('magic-missile', 'Magic Missile', 1, ['arcane']),
+        makeSpell('grease', 'Grease', 1, ['arcane']),
+        makeSpell('fear', 'Fear', 1, ['arcane']),
+      ]),
+    }));
+    const onSelect = jest.fn();
+    const picker = new SpellPicker(createMockActor({ items: [] }), 'arcane', 1, onSelect, {
+      exactRank: true,
+      multiSelect: true,
+      prepare: { max: 1 },
+    });
+    await picker._prepareContext();
+    picker.close = jest.fn();
+
+    picker._togglePreparedSpell('magic-missile');
+    picker._togglePreparedSpell('grease');
+    picker._toggleSelectedSpell('fear');
+
+    expect([...picker.selectedSpellUuids]).toEqual(['magic-missile', 'fear']);
+    expect([...picker.preparedSpellUuids]).toEqual(['magic-missile']);
+    expect(picker._getPrepareContext()).toEqual(expect.objectContaining({ prepareEnabled: true, canPrepareMore: false, preparedCount: 1 }));
+
+    await picker._confirmSelection();
+    const [spells, { preparedUuids }] = onSelect.mock.calls[0];
+    expect(spells.map((spell) => spell.uuid)).toEqual(['fear', 'magic-missile']);
+    expect([...preparedUuids]).toEqual(['magic-missile']);
+  });
+
+  test('updates the prepared and selected counters independently', async () => {
+    const picker = new SpellPicker(createMockActor({ items: [] }), 'arcane', 1, jest.fn(), {
+      exactRank: true,
+      multiSelect: true,
+      maxSelect: 5,
+      prepare: { max: 1 },
+    });
+    await picker._prepareContext();
+    const root = document.createElement('div');
+    root.innerHTML = `
+      <div class="spell-picker__prepared-count"></div>
+      <div class="spell-picker__selected-count"></div>
+    `;
+    picker._getRootElement = () => root;
+    game.i18n.format = jest.fn((key, data) => `${key}:${JSON.stringify(data)}`);
+
+    picker._togglePreparedSpell('magic-missile');
+    picker._updateSelectionUI();
+
+    expect(root.querySelector('.spell-picker__prepared-count').textContent).toBe('PF2E_LEVELER.SPELLS.PREPARED_COUNT:{"count":1,"max":1}');
+    expect(root.querySelector('.spell-picker__selected-count').textContent).toBe('1 / 5');
+  });
+
+  test('deselecting a prepared spell also unprepares it', async () => {
+    const picker = new SpellPicker(createMockActor({ items: [] }), 'arcane', 1, jest.fn(), {
+      exactRank: true,
+      multiSelect: true,
+      prepare: { max: 2 },
+    });
+    await picker._prepareContext();
+
+    picker._togglePreparedSpell('magic-missile');
+    picker._toggleSelectedSpell('magic-missile');
+
+    expect(picker.selectedSpellUuids.has('magic-missile')).toBe(false);
+    expect(picker.preparedSpellUuids.size).toBe(0);
+  });
+
+  test('toggles preparation on already selected spells through the callback', async () => {
+    const onToggleSelected = jest.fn();
+    const picker = new SpellPicker(createMockActor({ items: [] }), 'arcane', 1, jest.fn(), {
+      exactRank: true,
+      multiSelect: true,
+      selectedSpells: [{ uuid: 'grease', name: 'Grease', prepared: true }, { uuid: 'fear', name: 'Fear' }],
+      prepare: { max: 1, onToggleSelected },
+    });
+    picker.render = jest.fn();
+
+    await picker._togglePreparedSelected(1);
+    expect(onToggleSelected).not.toHaveBeenCalled();
+
+    await picker._togglePreparedSelected(0);
+    await picker._togglePreparedSelected(1);
+    expect(onToggleSelected.mock.calls.map(([spell, prepared]) => [spell.uuid, prepared])).toEqual([['grease', false], ['fear', true]]);
+    expect([...picker.preparedSpellUuids]).toEqual(['fear']);
+  });
+
+  test('prepare is disabled without multi-select or a slot budget', () => {
+    const single = new SpellPicker(createMockActor({ items: [] }), 'arcane', 1, jest.fn(), { prepare: { max: 3 } });
+    const noSlots = new SpellPicker(createMockActor({ items: [] }), 'arcane', 1, jest.fn(), { multiSelect: true });
+    expect(single._getPrepareContext().prepareEnabled).toBe(false);
+    expect(noSlots._getPrepareContext().prepareEnabled).toBe(false);
   });
 
   test('toggle select all selects or deselects only visible spells', () => {

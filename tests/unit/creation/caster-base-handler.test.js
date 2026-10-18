@@ -148,6 +148,54 @@ describe('CasterBaseHandler._applySpellcasting', () => {
     expect(actor.createEmbeddedDocuments).toHaveBeenCalledTimes(3);
   });
 
+  it('fills daily prepared slots with spells marked prepared in creation', async () => {
+    let nextId = 0;
+    const actor = {
+      items: [],
+      createEmbeddedDocuments: jest.fn(async (_type, docs) => docs.map((doc) => ({ id: doc.type === 'spellcastingEntry' ? 'entry-1' : `spell-${nextId++}`, ...doc }))),
+      updateEmbeddedDocuments: jest.fn(async () => []),
+    };
+
+    await new CasterBaseHandler()._applySpellcasting(actor, {
+      class: { slug: 'magus', name: 'Magus' },
+      subclass: null,
+      spells: {
+        cantrips: [{ uuid: 'Compendium.pf2e.spells-srd.Item.tangle-vine', prepared: true }],
+        rank1: [
+          { uuid: 'Compendium.pf2e.spells-srd.Item.grease' },
+          { uuid: 'Compendium.pf2e.spells-srd.Item.fear', prepared: true },
+        ],
+      },
+    });
+
+    const preparedUpdate = actor.updateEmbeddedDocuments.mock.calls.at(-1)[1][0];
+    expect(preparedUpdate).toEqual({
+      _id: 'entry-1',
+      'system.slots.slot0.prepared': [
+        { id: 'spell-0', expended: false },
+        ...Array.from({ length: 4 }, () => ({ id: null, expended: false })),
+      ],
+      'system.slots.slot1.prepared': [{ id: 'spell-2', expended: false }],
+    });
+  });
+
+  it('leaves prepared slots untouched when nothing is marked prepared', async () => {
+    const actor = {
+      items: [],
+      createEmbeddedDocuments: jest.fn(async (_type, docs) => docs.map((doc, index) => ({ id: `item-${index}`, ...doc }))),
+      updateEmbeddedDocuments: jest.fn(async () => []),
+    };
+
+    await new CasterBaseHandler()._applySpellcasting(actor, {
+      class: { slug: 'magus', name: 'Magus' },
+      subclass: null,
+      spells: { cantrips: [{ uuid: 'Compendium.pf2e.spells-srd.Item.tangle-vine' }], rank1: [] },
+    });
+
+    const updates = actor.updateEmbeddedDocuments.mock.calls.flatMap((call) => call[1]);
+    expect(updates.some((update) => Object.keys(update).some((key) => key.endsWith('.prepared')))).toBe(false);
+  });
+
   it('applies spells resolved by a specialized class handler', async () => {
     const createdDocs = [];
     const actor = {

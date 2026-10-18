@@ -1048,10 +1048,19 @@ export function removePermanentItem(data, slotIndex) {
   return data;
 }
 
-export function addSpell(data, spell, isCantrip, target = 'primary') {
+export function addSpell(data, spell, isCantrip, target = 'primary', { prepared = false } = {}) {
   const store = getSpellStore(data, target);
   const list = isCantrip ? store.cantrips : store.rank1;
-  list.push({ uuid: spell.uuid, name: spell.name, img: spell.img });
+  list.push({ uuid: spell.uuid, name: spell.name, img: spell.img, ...(prepared ? { prepared: true } : {}) });
+  return data;
+}
+
+export function setSpellPrepared(data, uuid, isCantrip, prepared, target = 'primary') {
+  const store = getSpellStore(data, target);
+  const spell = (isCantrip ? store.cantrips : store.rank1).find((entry) => entry.uuid === uuid);
+  if (!spell) return data;
+  if (prepared) spell.prepared = true;
+  else delete spell.prepared;
   return data;
 }
 
