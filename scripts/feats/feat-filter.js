@@ -1,6 +1,8 @@
 import { getBuildStateAncestryFeatTraits } from '../utils/ancestry-feat-traits.js';
 
 const UNIVERSAL_ANCESTRY_ACCESS_TRAITS = new Set(['reincarnated']);
+// Skill feats with no skill of their own; the skill is chosen when the feat is taken.
+const SKILL_CHOICE_FEAT_SLUGS = new Set(['assurance']);
 
 export function filterFeatsByCategory(feats, category, searchQuery, targetLevel, options = {}) {
   const normalizedQuery = normalizeQuery(searchQuery);
@@ -131,7 +133,19 @@ export function featMatchesSkills(feat, skillSlugs, logic = 'or') {
   return matchesFeatSkills(feat, normalizedSkills, getSkillLabels(normalizedSkills), logic);
 }
 
+export function isSkillChoiceFeat(feat) {
+  const slug = String(feat?.slug ?? feat?.system?.slug ?? feat?.name ?? '').trim().toLowerCase();
+  return SKILL_CHOICE_FEAT_SLUGS.has(slug);
+}
+
 function matchesFeatSkills(feat, normalizedSkills, skillLabels, logic) {
+  if (isSkillChoiceFeat(feat)) {
+    const chosenSkills = Object.values(feat?.choices ?? {})
+      .filter((value) => typeof value === 'string')
+      .map((value) => value.toLowerCase());
+    return chosenSkills.length === 0 || chosenSkills.some((skill) => normalizedSkills.includes(skill));
+  }
+
   const traits = (feat?.system?.traits?.value ?? feat?.traits ?? []).map((trait) => String(trait).toLowerCase());
   const prereqTexts = (feat?.system?.prerequisites?.value ?? [])
     .map((entry) => String((typeof entry === 'string' ? entry : entry?.value) ?? '').toLowerCase());

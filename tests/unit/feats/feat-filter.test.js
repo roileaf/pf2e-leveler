@@ -1553,4 +1553,18 @@ describe('featMatchesSkills', () => {
     expect(featMatchesSkills({ traits: ['crafting'] }, ['crafting'])).toBe(true);
     expect(featMatchesSkills({ traits: [] }, [])).toBe(true);
   });
+
+  test('matches Assurance by its chosen skill, or always before a skill is chosen', () => {
+    const assurance = { name: 'Assurance', slug: 'assurance', traits: ['general', 'skill'] };
+    expect(featMatchesSkills(assurance, ['arcana', 'diplomacy'])).toBe(true);
+    expect(featMatchesSkills({ ...assurance, choices: { assurance: 'arcana' } }, ['arcana', 'diplomacy'])).toBe(true);
+    expect(featMatchesSkills({ ...assurance, choices: { assurance: 'athletics' } }, ['arcana', 'diplomacy'])).toBe(false);
+  });
+
+  test('filterBySkill keeps compendium Assurance for a skill-restricted slot', () => {
+    const assurance = { ...makeFeat('Assurance', 1, ['general', 'skill']), slug: null };
+    const athleticsFeat = makeFeat('Combat Climber', 1, ['general', 'skill']);
+    athleticsFeat.system.prerequisites = { value: [{ value: 'trained in Athletics' }] };
+    expect(filterBySkill([assurance, athleticsFeat], ['arcana', 'diplomacy']).map((feat) => feat.name)).toEqual(['Assurance']);
+  });
 });

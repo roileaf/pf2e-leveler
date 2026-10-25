@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.12.5
+
+### Fixed
+
+- **Assurance on restricted skill feat slots** - Investigators can now pick Assurance for Skillful Lessons ([#113](https://github.com/roileaf/pf2e-leveler/issues/113)), and its skill choice is limited to the skills the slot allows. The same applies to Swashbuckler Stylish Tricks and Mechanic's Ingenuity
+
 ## 3.12.4
 
 ### Fixed

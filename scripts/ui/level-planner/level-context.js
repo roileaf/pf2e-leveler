@@ -12,6 +12,7 @@ import {
 } from '../../plan/feat-grants.js';
 import { computeBuildState, computeSkillPickerState, getAutomaticInitialSkillTraining, getImportedInitialSkillChoiceTraining, getImportedInitialSkillTraining } from '../../plan/build-state.js';
 import { isCantripExpansionFeat } from '../../plan/spellbook-feats.js';
+import { isSkillChoiceFeat } from '../../feats/feat-filter.js';
 import { loadCompendium, loadCompendiumCategory, loadDeities, loadTaggedClassFeatures } from '../character-wizard/loaders.js';
 import { extractGrantedTrainedSkills, normalizePf2eCompendiumUuid, parseChoiceSets } from '../character-wizard/choice-sets.js';
 import { humanizeSkillLikeLabel, normalizeLoreSkillName, slugifyLoreSkillName } from '../character-wizard/skills-languages.js';
@@ -70,7 +71,11 @@ export async function buildLevelContext(planner, classDef, options) {
     ? await buildAdoptedAncestryOptions(planner, generalFeat)
     : [];
   const classFeatChoiceSets = await buildPlannerFeatChoiceSets(planner, classFeat);
-  const skillFeatChoiceSets = await buildPlannerFeatChoiceSets(planner, skillFeat);
+  const skillFeatChoiceSets = restrictSkillChoiceFeatOptions(
+    skillFeat,
+    await buildPlannerFeatChoiceSets(planner, skillFeat),
+    (await planner._buildSkillFeatLimitations?.(level))?.requiredSkills,
+  );
   const skillFeatWithChoiceSets = mergePlannerChoiceSetsIntoFeat(skillFeat, skillFeatChoiceSets);
   const generalFeatChoiceSets = await buildPlannerFeatChoiceSets(planner, generalFeat);
   const generalFeatHasNativeAncestryGrantChoice = generalFeatGrantsAncestryFeat
@@ -890,6 +895,15 @@ function hasAdoptedAncestryAccess(item) {
 
   const guidance = resolveGuidanceStatus(item);
   return ADOPTED_ANCESTRY_ACCESS_STATUSES.has(guidance.status) || guidance.exclusive === true;
+}
+
+// A restricted slot (Skillful Lessons, Stylish Tricks, ...) limits which skill Assurance can pick.
+function restrictSkillChoiceFeatOptions(feat, choiceSets, allowedSkills) {
+  if (!allowedSkills?.length || !isSkillChoiceFeat(feat)) return choiceSets;
+  const allowed = new Set(allowedSkills.map((skill) => String(skill).toLowerCase()));
+  return choiceSets.map((choiceSet) => (choiceSet.choiceType === 'skill'
+    ? { ...choiceSet, options: choiceSet.options.filter((option) => allowed.has(String(option.value).toLowerCase())) }
+    : choiceSet));
 }
 
 async function buildPlannerFeatChoiceSets(planner, feat) {

@@ -4776,6 +4776,58 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     }
   });
 
+  it('limits Assurance skill choices to Skillful Lessons skills', async () => {
+    const originalConfig = global.CONFIG;
+    const originalFromUuid = global.fromUuid;
+
+    global.CONFIG = {
+      ...(originalConfig ?? {}),
+      PF2E: {
+        ...(originalConfig?.PF2E ?? {}),
+        skills: {
+          acrobatics: 'Acrobatics',
+          athletics: 'Athletics',
+          diplomacy: 'Diplomacy',
+          occultism: 'Occultism',
+        },
+      },
+    };
+
+    const actor = createMockActor({ items: [] });
+    actor.class.slug = 'investigator';
+
+    const planner = new LevelPlanner(actor);
+    planner.plan = createPlan('investigator');
+    planner.selectedLevel = 3;
+    planner.plan.levels[3].skillFeats = [{
+      uuid: 'Compendium.pf2e.feats-srd.Item.assurance',
+      name: 'Assurance',
+      slug: 'assurance',
+      choices: {},
+    }];
+
+    global.fromUuid = jest.fn(async (uuid) => (uuid === 'Compendium.pf2e.feats-srd.Item.assurance'
+      ? {
+        uuid,
+        name: 'Assurance',
+        slug: 'assurance',
+        system: {
+          description: { value: '' },
+          rules: [{ key: 'ChoiceSet', flag: 'assurance', prompt: 'Select a skill.', choices: { config: 'skills' } }],
+        },
+      }
+      : null));
+
+    try {
+      const context = await planner._buildLevelContext(ClassRegistry.get('investigator'), planner._getVariantOptions());
+      const choiceSet = context.skillFeat.grantChoiceSets.find((entry) => entry.flag === 'assurance');
+      expect(choiceSet.options.map((option) => option.value).sort()).toEqual(['diplomacy', 'occultism']);
+    } finally {
+      global.CONFIG = originalConfig;
+      global.fromUuid = originalFromUuid;
+    }
+  });
+
   it('adds a language choice set for predicate-gated archetype language slots', async () => {
     const originalConfig = global.CONFIG;
     const originalFromUuid = global.fromUuid;
