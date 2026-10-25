@@ -2,9 +2,19 @@ import { getBuildStateAncestryFeatTraits } from '../utils/ancestry-feat-traits.j
 
 const UNIVERSAL_ANCESTRY_ACCESS_TRAITS = new Set(['reincarnated']);
 // Skill feats with no skill of their own; the skill is chosen when the feat is taken.
-const SKILL_CHOICE_FEAT_SLUGS = new Set(['assurance']);
-// Skill feats whose data names no skill, although the skill is fixed (Additional Lore always grants a Lore).
-const IMPLIED_FEAT_SKILLS = new Map([['additional-lore', 'lore']]);
+const SKILL_CHOICE_FEAT_SLUGS = new Set(['assurance', 'skill-training']);
+const RECALL_KNOWLEDGE_SKILLS = ['arcana', 'crafting', 'lore', 'medicine', 'nature', 'occultism', 'religion', 'society'];
+const DECIPHER_WRITING_SKILLS = ['arcana', 'occultism', 'religion', 'society'];
+// Skill feats whose data names no skill, although their skills are fixed by the rules text.
+const IMPLIED_FEAT_SKILLS = new Map([
+  ['additional-lore', ['lore']],
+  ['kreightons-cognitive-crossover', RECALL_KNOWLEDGE_SKILLS],
+]);
+// Prerequisites such as "master in a Recall Knowledge skill" name every skill that can take the action.
+const SKILL_ACTION_PREREQUISITES = [
+  { pattern: /\brecall knowledge\b/, skills: RECALL_KNOWLEDGE_SKILLS },
+  { pattern: /\bdecipher writing\b/, skills: DECIPHER_WRITING_SKILLS },
+];
 
 export function filterFeatsByCategory(feats, category, searchQuery, targetLevel, options = {}) {
   const normalizedQuery = normalizeQuery(searchQuery);
@@ -136,8 +146,7 @@ export function featMatchesSkills(feat, skillSlugs, logic = 'or') {
 }
 
 export function isSkillChoiceFeat(feat) {
-  const slug = String(feat?.slug ?? feat?.system?.slug ?? feat?.name ?? '').trim().toLowerCase();
-  return SKILL_CHOICE_FEAT_SLUGS.has(slug);
+  return SKILL_CHOICE_FEAT_SLUGS.has(getFeatFilterSlug({ name: feat?.slug ?? feat?.system?.slug ?? feat?.name }));
 }
 
 function matchesFeatSkills(feat, normalizedSkills, skillLabels, logic) {
@@ -152,10 +161,13 @@ function matchesFeatSkills(feat, normalizedSkills, skillLabels, logic) {
   const prereqTexts = (feat?.system?.prerequisites?.value ?? [])
     .map((entry) => String((typeof entry === 'string' ? entry : entry?.value) ?? '').toLowerCase());
 
-  const impliedSkill = IMPLIED_FEAT_SKILLS.get(getFeatFilterSlug(feat));
+  const impliedSkills = IMPLIED_FEAT_SKILLS.get(getFeatFilterSlug(feat)) ?? [];
+  const actionSkills = SKILL_ACTION_PREREQUISITES
+    .filter(({ pattern }) => prereqTexts.some((text) => pattern.test(text)))
+    .flatMap(({ skills }) => skills);
 
   const matchesSkill = (skill) => {
-    if (skill === impliedSkill || traits.includes(skill)) return true;
+    if (impliedSkills.includes(skill) || actionSkills.includes(skill) || traits.includes(skill)) return true;
     // "lore" is a substring of unrelated words such as "Loremaster", so it must match as a whole word.
     if (skill === 'lore') return prereqTexts.some((text) => /\blore\b/.test(text));
     const label = skillLabels.get(skill) ?? skill;

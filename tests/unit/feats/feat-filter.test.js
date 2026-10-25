@@ -1575,6 +1575,38 @@ describe('featMatchesSkills', () => {
     expect(featMatchesSkills(loremasterFeat, ['lore'])).toBe(false);
   });
 
+  test('matches Skill Training by its chosen skill, or always before a skill is chosen', () => {
+    const skillTraining = { ...makeFeat('Skill Training', 1, ['general', 'skill']), slug: null };
+    skillTraining.system.prerequisites = { value: [{ value: 'Intelligence +1' }] };
+    expect(featMatchesSkills(skillTraining, ['arcana', 'diplomacy'])).toBe(true);
+    expect(featMatchesSkills({ ...skillTraining, choices: { skill: 'diplomacy' } }, ['arcana', 'diplomacy'])).toBe(true);
+    expect(featMatchesSkills({ ...skillTraining, choices: { skill: 'athletics' } }, ['arcana', 'diplomacy'])).toBe(false);
+  });
+
+  test('matches Recall Knowledge prerequisites to the skills that can Recall Knowledge', () => {
+    const dubiousKnowledge = makeFeat('Dubious Knowledge', 1, ['general', 'skill']);
+    dubiousKnowledge.system.prerequisites = { value: [{ value: 'trained in a skill with the Recall Knowledge action' }] };
+    expect(featMatchesSkills(dubiousKnowledge, ['occultism'])).toBe(true);
+    expect(featMatchesSkills(dubiousKnowledge, ['lore'])).toBe(true);
+    expect(featMatchesSkills(dubiousKnowledge, ['deception', 'diplomacy'])).toBe(false);
+    expect(featMatchesSkills(dubiousKnowledge, ['acrobatics', 'athletics', 'stealth', 'thievery'])).toBe(false);
+  });
+
+  test('matches Decipher Writing prerequisites to the skills that can Decipher Writing', () => {
+    const unravelMysteries = makeFeat('Unravel Mysteries', 8, ['archetype', 'skill']);
+    unravelMysteries.system.prerequisites = {
+      value: [{ value: 'master in a Decipher Writing skill' }, { value: 'Scrollmaster Dedication' }],
+    };
+    expect(featMatchesSkills(unravelMysteries, ['society'])).toBe(true);
+    expect(featMatchesSkills(unravelMysteries, ['crafting', 'medicine'])).toBe(false);
+  });
+
+  test("matches Kreighton's Cognitive Crossover to the Recall Knowledge skills it lets you choose", () => {
+    const crossover = { ...makeFeat("Kreighton's Cognitive Crossover", 4, ['general', 'skill']), slug: null };
+    expect(featMatchesSkills(crossover, ['nature'])).toBe(true);
+    expect(featMatchesSkills(crossover, ['diplomacy', 'athletics'])).toBe(false);
+  });
+
   test('filterBySkill keeps compendium Assurance for a skill-restricted slot', () => {
     const assurance = { ...makeFeat('Assurance', 1, ['general', 'skill']), slug: null };
     const athleticsFeat = makeFeat('Combat Climber', 1, ['general', 'skill']);
