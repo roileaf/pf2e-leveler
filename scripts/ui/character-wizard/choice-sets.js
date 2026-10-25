@@ -1376,10 +1376,13 @@ async function resolveChoiceSetOptions(wizard, rule, currentChoices = {}, source
     return resolveConfigChoiceOptions(rule.choices.config);
   }
 
-  const resolvedFilter = withKineticGateImpulseLevelFilter(
-    resolveChoiceSetFilterPlaceholders(rule.choices.filter ?? [], wizard, currentChoices),
+  const resolvedFilter = withShieldImplementBulkFilter(
+    withKineticGateImpulseLevelFilter(
+      resolveChoiceSetFilterPlaceholders(rule.choices.filter ?? [], wizard, currentChoices),
+      rule,
+      sourceItem,
+    ),
     rule,
-    sourceItem,
   );
   const candidates = await loadChoiceSetCandidates(wizard, {
     ...rule.choices,
@@ -1400,6 +1403,7 @@ async function resolveChoiceSetOptions(wizard, rule, currentChoices = {}, source
       if (itemType === 'heritage') return type === 'heritage';
       if (itemType === 'deity') return type === 'deity' || category === 'deity';
       if (itemType === 'classfeature') return category === 'classfeature';
+      if (PHYSICAL_CHOICE_ITEM_TYPES.has(itemType)) return type === itemType;
       return true;
     })
     .filter((item) => matchesChoiceSetFilters(item, resolvedFilter))
@@ -1431,6 +1435,12 @@ function withKineticGateImpulseLevelFilter(filter, rule, sourceItem) {
   if (!isKineticGateImpulseChoiceSet(rule, sourceItem)) return filter;
   if (choiceSetFilterMentionsItemLevel(filter)) return filter;
   return [...(Array.isArray(filter) ? filter : [filter]).filter(Boolean), 'item:level:1'];
+}
+
+// The system's Shield implement ChoiceSet only filters by type, but the implement must be 1 Bulk or less.
+function withShieldImplementBulkFilter(filter, rule) {
+  if (rule?.flag !== 'shieldImplement') return filter;
+  return [...(Array.isArray(filter) ? filter : [filter]).filter(Boolean), { lte: ['item:bulk', 1] }];
 }
 
 function isKineticGateImpulseChoiceSet(rule, sourceItem) {
@@ -2611,7 +2621,7 @@ function getChoiceSetPackKeys(itemType, filters) {
   if (PHYSICAL_CHOICE_ITEM_FILTERS.some((filter) => flattenedFilters.includes(filter))) addCategoryKeys(keys, 'equipment');
   if (flattenedFilters.includes('item:type:ancestry') || flattenedFilters.includes('item:ancestry:')) addCategoryKeys(keys, 'ancestries');
   if (flattenedFilters.includes('item:type:heritage') || flattenedFilters.includes('item:ancestry:')) addCategoryKeys(keys, 'heritages');
-  if (flattenedFilters.includes('item:tag:') || flattenedFilters.includes('item:trait:')) {
+  if (!PHYSICAL_CHOICE_ITEM_TYPES.has(normalizedType) && (flattenedFilters.includes('item:tag:') || flattenedFilters.includes('item:trait:'))) {
     addCategoryKeys(keys, 'classFeatures');
     addCategoryKeys(keys, 'feats');
   }
@@ -2751,6 +2761,7 @@ function resolveChoiceSetFilterOperand(item, operand) {
       case 'ranged': return isRangedWeapon(item);
       case 'thrown-melee': return isThrownMeleeWeapon(item);
       case 'magical': return !!item.isMagical || (item.traits ?? []).includes('magical');
+      case 'bulk': return item.bulk ?? null;
       default: return operand;
     }
   }
@@ -2797,6 +2808,7 @@ function matchesChoiceSetFilterString(item, filter) {
       : String(item.slug ?? '').toLowerCase() === field.toLowerCase();
   }
   const value = rest.join(':');
+  if (field === 'usage' && rest[0] === 'hands') return getUsageHands(item.usage) === Number(rest[1]);
 
   switch (field) {
     case 'tag':
@@ -2851,11 +2863,19 @@ function normalizeChoiceCandidate(item) {
     category: typeof rawSystem?.category === 'string' ? rawSystem.category : (rawSystem?.category?.value ?? null),
     ancestrySlug: rawSystem?.ancestry?.slug ?? null,
     usage: rawSystem?.usage?.value ?? null,
+    bulk: rawSystem?.bulk?.value ?? null,
     range: normalizeRangeValue(rawSystem?.range ?? null),
     isRanged: isRangedWeaponData(rawSystem),
     damageTypes: [...new Set(damageTypeEntries.filter((type) => typeof type === 'string' && type.length > 0))],
     isMagical: !!rawSystem?.traits?.value?.includes?.('magical'),
   };
+}
+
+function getUsageHands(usage) {
+  const value = String(usage ?? '');
+  if (value === 'held-in-two-hands') return 2;
+  if (value.startsWith('held-in-one')) return 1;
+  return 0;
 }
 
 function normalizeChoiceCategory(category) {

@@ -7039,4 +7039,70 @@ describe('CharacterWizard subclass choice-set parsing', () => {
       value: 'Dragon Instinct',
     }));
   });
+  describe('thaumaturge weapon and shield implements', () => {
+    const equipmentEntry = (overrides) => ({
+      img: 'icons/svg/item-bag.svg',
+      traits: [],
+      otherTags: [],
+      rarity: 'common',
+      level: 0,
+      range: null,
+      damageTypes: [],
+      isMagical: false,
+      usage: null,
+      bulk: 1,
+      ...overrides,
+    });
+
+    const equipment = [
+      equipmentEntry({ uuid: 'Compendium.pf2e.equipment-srd.Item.longsword', name: 'Longsword', type: 'weapon', slug: 'longsword', usage: 'held-in-one-hand' }),
+      equipmentEntry({ uuid: 'Compendium.pf2e.equipment-srd.Item.bastard-sword', name: 'Bastard Sword', type: 'weapon', slug: 'bastard-sword', usage: 'held-in-one-plus-hands' }),
+      equipmentEntry({ uuid: 'Compendium.pf2e.equipment-srd.Item.greataxe', name: 'Greataxe', type: 'weapon', slug: 'greataxe', usage: 'held-in-two-hands', bulk: 2 }),
+      equipmentEntry({ uuid: 'Compendium.pf2e.equipment-srd.Item.flaming-sword', name: 'Magic Sword', type: 'weapon', slug: 'magic-sword', usage: 'held-in-one-hand', traits: ['magical'], isMagical: true }),
+      equipmentEntry({ uuid: 'Compendium.pf2e.equipment-srd.Item.chain-mail', name: 'Chain Mail', type: 'armor', slug: 'chain-mail', usage: 'wornarmor', bulk: 2 }),
+      equipmentEntry({ uuid: 'Compendium.pf2e.equipment-srd.Item.gold-ring', name: 'Gold Ring', type: 'treasure', slug: 'gold-ring', usage: 'held-in-one-hand' }),
+      equipmentEntry({ uuid: 'Compendium.pf2e.equipment-srd.Item.steel-shield', name: 'Steel Shield', type: 'shield', slug: 'steel-shield', usage: 'held-in-one-hand' }),
+      equipmentEntry({ uuid: 'Compendium.pf2e.equipment-srd.Item.buckler', name: 'Buckler', type: 'shield', slug: 'buckler', usage: 'held-in-one-hand', bulk: 0.1 }),
+      equipmentEntry({ uuid: 'Compendium.pf2e.equipment-srd.Item.tower-shield', name: 'Tower Shield', type: 'shield', slug: 'tower-shield', usage: 'held-in-one-hand', bulk: 4 }),
+    ];
+    const feat = equipmentEntry({ uuid: 'Compendium.pf2e.feats-srd.Item.power-attack', name: 'Power Attack', type: 'feat', slug: 'power-attack', category: 'class' });
+
+    function createImplementWizard() {
+      const wizard = new CharacterWizard(createMockActor());
+      wizard._loadCompendium = jest.fn(async (key) => {
+        if (key === 'pf2e.equipment-srd') return [...equipment, feat];
+        if (key === 'pf2e.feats-srd') return [feat];
+        return [];
+      });
+      return wizard;
+    }
+
+    it('limits the Weapon implement to non-magical one-handed weapons', async () => {
+      const wizard = createImplementWizard();
+      const [choiceSet] = await parseChoiceSets(wizard, [{
+        key: 'ChoiceSet',
+        flag: 'weaponImplement',
+        prompt: 'PF2E.SpecificRule.Prompt.Weapon',
+        choices: {
+          itemType: 'weapon',
+          filter: ['item:usage:hands:1', { nor: ['item:magical', 'item:trait:consumable'] }],
+        },
+      }]);
+
+      expect(choiceSet.options.map((option) => option.label)).toEqual(['Bastard Sword', 'Longsword']);
+      expect(wizard._loadCompendium).not.toHaveBeenCalledWith('pf2e.feats-srd');
+    });
+
+    it('limits the Shield implement to non-magical shields of 1 Bulk or less', async () => {
+      const wizard = createImplementWizard();
+      const [choiceSet] = await parseChoiceSets(wizard, [{
+        key: 'ChoiceSet',
+        flag: 'shieldImplement',
+        prompt: 'PF2E.SpecificRule.Thaumaturge.Implement.Shield.Prompt',
+        choices: { itemType: 'shield', filter: [{ not: 'item:magical' }] },
+      }]);
+
+      expect(choiceSet.options.map((option) => option.label)).toEqual(['Buckler', 'Steel Shield']);
+    });
+  });
 });

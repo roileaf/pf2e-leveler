@@ -44,6 +44,7 @@ export async function loadCompendium(wizard, key) {
     category: normalizeCategoryValue(d.system?.category),
     ancestrySlug: d.system?.ancestry?.slug ?? null,
     usage: d.system?.usage?.value ?? null,
+    bulk: d.system?.bulk?.value ?? null,
     range: normalizeRangeValue(d.system?.range ?? null),
     isRanged: isRangedWeaponData(d.system),
     damageTypes: extractDamageTypes(d),

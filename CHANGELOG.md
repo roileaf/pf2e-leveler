@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.12.6
+
+### Fixed
+
+- **Thaumaturge Weapon and Shield implements** - The implement item picker now lists only non-magical one-handed weapons for the Weapon implement, and only non-magical shields of 1 Bulk or less for the Shield implement. Feats, spells, treasure, armor, and two-handed weapons no longer appear
+
 ## 3.12.5
 
 ### Fixed
