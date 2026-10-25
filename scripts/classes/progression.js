@@ -1,4 +1,5 @@
 import { localize } from '../utils/i18n.js';
+import { getSelectedSubclassItem } from './class-archetype-requirements.js';
 
 export const BOOSTS_PER_LEVEL = 4;
 
@@ -117,9 +118,26 @@ function addClassFeatureSkillIncreaseChoices(choices, classDef, level) {
   }
 }
 
-export function getSkillFeatRestriction(classDef, level) {
+export function getSkillFeatRestriction(classDef, level, actor = null) {
   const restriction = classDef?.skillFeatRestriction;
-  return restriction?.levels?.includes(level) ? restriction : null;
+  if (!restriction?.levels?.includes(level)) return null;
+  if (!restriction.subclassSkills) return restriction;
+
+  // Without a known subclass, any subclass skill is allowed rather than blocking the slot.
+  const subclassSkill = getSubclassSkill(restriction.subclassSkills, actor, classDef.slug);
+  const extraSkills = subclassSkill ? [subclassSkill] : Object.values(restriction.subclassSkills);
+  return { ...restriction, skills: [...new Set([...restriction.skills, ...extraSkills])] };
+}
+
+function getSubclassSkill(subclassSkills, actor, classSlug) {
+  const subclassItem = getSelectedSubclassItem(actor, classSlug);
+  if (!subclassItem) return null;
+
+  const keys = [subclassItem.slug, subclassItem.system?.slug, subclassItem.name]
+    .map((value) => String(value ?? '').trim().toLowerCase().replace(/[\s_]+/g, '-').replace(/-style$/, ''))
+    .filter(Boolean);
+  const match = keys.find((key) => Object.hasOwn(subclassSkills, key));
+  return match ? subclassSkills[match] : null;
 }
 
 export function normalizeSkillIncreaseSource(source) {

@@ -1,3 +1,14 @@
+const STYLISH_TRICKS_NAME = 'Stylish Tricks';
+const STYLISH_TRICKS_LEVELS = [3, 7, 15];
+const STYLE_SKILLS = {
+  battledancer: 'performance',
+  braggart: 'intimidation',
+  fencer: 'deception',
+  gymnast: 'athletics',
+  rascal: 'thievery',
+  wit: 'diplomacy',
+};
+
 export const SWASHBUCKLER = {
   slug: 'swashbuckler',
   nameKey: 'PF2E_LEVELER.SWASHBUCKLER.NAME',
@@ -7,22 +18,28 @@ export const SWASHBUCKLER = {
 
   featSchedule: {
     class: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
-    skill: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+    skill: [2, 3, 4, 6, 7, 8, 10, 12, 14, 15, 16, 18, 20],
     general: [3, 7, 11, 15, 19],
     ancestry: [5, 9, 13, 17],
   },
   skillIncreaseSchedule: [3, 5, 7, 9, 11, 13, 15, 17, 19],
   abilityBoostSchedule: [5, 10, 15, 20],
+  skillFeatRestriction: {
+    label: STYLISH_TRICKS_NAME,
+    levels: STYLISH_TRICKS_LEVELS,
+    skills: ['acrobatics'],
+    subclassSkills: STYLE_SKILLS,
+  },
 
   classFeatures: [
     { level: 1, name: 'Precise Strike', key: 'precise-strike' },
     { level: 3, name: 'Fortitude Expertise', key: 'fortitude-expertise' },
     { level: 3, name: 'Opportune Riposte', key: 'opportune-riposte' },
-    { level: 3, name: 'Stylish Tricks', key: 'stylish-tricks' },
+    { level: 3, name: STYLISH_TRICKS_NAME, key: 'stylish-tricks' },
     { level: 3, name: 'Vivacious Speed', key: 'vivacious-speed' },
     { level: 5, name: 'Weapon Expertise', key: 'weapon-expertise' },
     { level: 7, name: 'Confident Evasion', key: 'confident-evasion' },
-    { level: 7, name: 'Stylish Tricks', key: 'stylish-tricks' },
+    { level: 7, name: STYLISH_TRICKS_NAME, key: 'stylish-tricks' },
     { level: 7, name: 'Vivacious Speed', key: 'vivacious-speed' },
     { level: 7, name: 'Weapon Specialization', key: 'weapon-specialization' },
     { level: 9, name: 'Exemplary Finisher', key: 'exemplary-finisher' },
@@ -35,7 +52,7 @@ export const SWASHBUCKLER = {
     { level: 13, name: 'Weapon Mastery', key: 'weapon-mastery' },
     { level: 15, name: 'Greater Weapon Specialization', key: 'greater-weapon-specialization' },
     { level: 15, name: 'Keen Flair', key: 'keen-flair' },
-    { level: 15, name: 'Stylish Tricks', key: 'stylish-tricks' },
+    { level: 15, name: STYLISH_TRICKS_NAME, key: 'stylish-tricks' },
     { level: 15, name: 'Vivacious Speed', key: 'vivacious-speed' },
     { level: 17, name: 'Reinforced Ego', key: 'reinforced-ego' },
     { level: 19, name: 'Eternal Confidence', key: 'eternal-confidence' },

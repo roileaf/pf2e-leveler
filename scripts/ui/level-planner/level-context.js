@@ -132,7 +132,7 @@ export async function buildLevelContext(planner, classDef, options) {
     classFeatChoiceSets,
     showSkillFeat: choiceTypes.has('skillFeat'),
     skillFeat: skillFeatWithChoiceSets,
-    skillFeatRestriction: buildSkillFeatRestrictionContext(getSkillFeatRestriction(classDef, level)),
+    skillFeatRestriction: buildSkillFeatRestrictionContext(getSkillFeatRestriction(classDef, level, planner.actor)),
     showGeneralFeat: choiceTypes.has('generalFeat'),
     generalFeat,
     generalFeatChoiceSets,

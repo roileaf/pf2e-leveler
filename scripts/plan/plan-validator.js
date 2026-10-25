@@ -243,7 +243,7 @@ function validateChoice(choice, levelData, level, plan, classDef, options, actor
     case 'classFeat':
       return validateClassFeat(levelData.classFeats, level, actor);
     case 'skillFeat':
-      return validateSkillFeat(levelData.skillFeats, getSkillFeatRestriction(classDef, level));
+      return validateSkillFeat(levelData.skillFeats, getSkillFeatRestriction(classDef, level, actor));
     case 'generalFeat':
       return validateFeatSlot(levelData.generalFeats, 'General Feat');
     case 'ancestryFeat':

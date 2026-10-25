@@ -2596,7 +2596,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if (investigatorLimitations.requiredSkills) return investigatorLimitations;
 
     const classSlug = String(buildState?.class?.slug ?? this.actor?.class?.slug ?? '').toLowerCase();
-    const restriction = getSkillFeatRestriction(ClassRegistry.get(classSlug, this.actor), level);
+    const restriction = getSkillFeatRestriction(ClassRegistry.get(classSlug, this.actor), level, this.actor);
     if (!restriction) return {};
     return {
       requiredSkills: [...restriction.skills],

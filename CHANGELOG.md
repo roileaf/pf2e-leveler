@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.12.4
+
+### Fixed
+
+- **Swashbuckler Stylish Tricks** - Swashbucklers now get the bonus skill feat from Stylish Tricks at levels 3, 7, and 15, limited to Acrobatics or the skill from their style (for example Intimidation for Braggart)
+
 ## 3.12.3
 
 ### Added
