@@ -3,6 +3,8 @@ import { getBuildStateAncestryFeatTraits } from '../utils/ancestry-feat-traits.j
 const UNIVERSAL_ANCESTRY_ACCESS_TRAITS = new Set(['reincarnated']);
 // Skill feats with no skill of their own; the skill is chosen when the feat is taken.
 const SKILL_CHOICE_FEAT_SLUGS = new Set(['assurance']);
+// Skill feats whose data names no skill, although the skill is fixed (Additional Lore always grants a Lore).
+const IMPLIED_FEAT_SKILLS = new Map([['additional-lore', 'lore']]);
 
 export function filterFeatsByCategory(feats, category, searchQuery, targetLevel, options = {}) {
   const normalizedQuery = normalizeQuery(searchQuery);
@@ -150,9 +152,14 @@ function matchesFeatSkills(feat, normalizedSkills, skillLabels, logic) {
   const prereqTexts = (feat?.system?.prerequisites?.value ?? [])
     .map((entry) => String((typeof entry === 'string' ? entry : entry?.value) ?? '').toLowerCase());
 
+  const impliedSkill = IMPLIED_FEAT_SKILLS.get(getFeatFilterSlug(feat));
+
   const matchesSkill = (skill) => {
+    if (skill === impliedSkill || traits.includes(skill)) return true;
+    // "lore" is a substring of unrelated words such as "Loremaster", so it must match as a whole word.
+    if (skill === 'lore') return prereqTexts.some((text) => /\blore\b/.test(text));
     const label = skillLabels.get(skill) ?? skill;
-    return traits.includes(skill) || prereqTexts.some((text) => text.includes(skill) || text.includes(label));
+    return prereqTexts.some((text) => text.includes(skill) || text.includes(label));
   };
 
   return logic === 'and' ? normalizedSkills.every(matchesSkill) : normalizedSkills.some(matchesSkill);

@@ -805,6 +805,7 @@ describe('LevelPlanner bootstrap from existing actor', () => {
       'diplomacy',
       'intimidation',
       'performance',
+      'lore',
       'stealth',
     ]));
     expect(preset.requiredSkills).not.toContain('athletics');

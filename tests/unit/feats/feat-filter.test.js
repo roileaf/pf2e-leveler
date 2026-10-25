@@ -1561,10 +1561,30 @@ describe('featMatchesSkills', () => {
     expect(featMatchesSkills({ ...assurance, choices: { assurance: 'athletics' } }, ['arcana', 'diplomacy'])).toBe(false);
   });
 
+  test('matches Additional Lore as a Lore feat, with or without a Lore chosen', () => {
+    const additionalLore = { name: 'Additional Lore', slug: 'additional-lore', traits: ['general', 'skill'] };
+    expect(featMatchesSkills(additionalLore, ['arcana', 'lore'])).toBe(true);
+    expect(featMatchesSkills({ ...additionalLore, choices: { levelerAdditionalLore: 'warfare-lore' } }, ['arcana', 'lore'])).toBe(true);
+    expect(featMatchesSkills(additionalLore, ['arcana', 'diplomacy'])).toBe(false);
+  });
+
+  test('matches Lore prerequisites as a whole word only', () => {
+    const loreFeat = { traits: ['skill'], system: { prerequisites: { value: [{ value: 'expert in a Lore skill' }] } } };
+    const loremasterFeat = { traits: ['skill'], system: { prerequisites: { value: [{ value: 'Loremaster Dedication' }] } } };
+    expect(featMatchesSkills(loreFeat, ['lore'])).toBe(true);
+    expect(featMatchesSkills(loremasterFeat, ['lore'])).toBe(false);
+  });
+
   test('filterBySkill keeps compendium Assurance for a skill-restricted slot', () => {
     const assurance = { ...makeFeat('Assurance', 1, ['general', 'skill']), slug: null };
     const athleticsFeat = makeFeat('Combat Climber', 1, ['general', 'skill']);
     athleticsFeat.system.prerequisites = { value: [{ value: 'trained in Athletics' }] };
     expect(filterBySkill([assurance, athleticsFeat], ['arcana', 'diplomacy']).map((feat) => feat.name)).toEqual(['Assurance']);
+  });
+
+  test('filterBySkill keeps compendium Additional Lore when Lore is allowed', () => {
+    const additionalLore = { ...makeFeat('Additional Lore', 1, ['general', 'skill']), slug: null };
+    expect(filterBySkill([additionalLore], ['arcana', 'lore']).map((feat) => feat.name)).toEqual(['Additional Lore']);
+    expect(filterBySkill([additionalLore], ['arcana', 'diplomacy'])).toEqual([]);
   });
 });
