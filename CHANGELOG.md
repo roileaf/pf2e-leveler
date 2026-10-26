@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.12.8
+
+### Fixed
+
+- **More skill feats for Skillful Lessons** - Investigator Skillful Lessons slots now offer Lore feats (Additional Lore, Experienced Professional, Battle Planner, and others), Recall Knowledge feats such as Dubious Knowledge and Automatic Knowledge, Skill Training, Kreighton's Cognitive Crossover, and feats that build on another skill feat, such as Mortal Healing ([#114](https://github.com/roileaf/pf2e-leveler/issues/114))
+
 ## 3.12.7
 
 ### Fixed

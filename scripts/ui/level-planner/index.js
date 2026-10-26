@@ -35,7 +35,7 @@ const FEAT_ALIASES_VERSION = 1;
 const FEAT_CORE_METADATA_VERSION = 2;
 const FEAT_SPELLCASTING_VERSION = FEAT_SPELLCASTING_METADATA_VERSION;
 const FEAT_KEYS = ['classFeats', 'skillFeats', 'generalFeats', 'ancestryFeats', 'archetypeFeats', 'mythicFeats', 'dualClassFeats', 'customFeats'];
-const INVESTIGATOR_SKILLFUL_LESSON_BASE_SKILLS = ['arcana', 'crafting', 'occultism', 'society', 'medicine', 'nature', 'religion', 'survival', 'deception', 'diplomacy', 'intimidation', 'performance'];
+const INVESTIGATOR_SKILLFUL_LESSON_BASE_SKILLS = ['arcana', 'crafting', 'lore', 'occultism', 'society', 'medicine', 'nature', 'religion', 'survival', 'deception', 'diplomacy', 'intimidation', 'performance'];
 const PLANNER_WINDOW_SELECTORS = ['#pf2e-leveler-planner', '.pf2e-leveler.level-planner'];
 
 installRetrainChoicePickerListeners();

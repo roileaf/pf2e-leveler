@@ -1,8 +1,15 @@
 import { getBuildStateAncestryFeatTraits } from '../utils/ancestry-feat-traits.js';
+import { getCachedFeats } from './feat-cache.js';
 
 const UNIVERSAL_ANCESTRY_ACCESS_TRAITS = new Set(['reincarnated']);
 // Skill feats with no skill of their own; the skill is chosen when the feat is taken.
-const SKILL_CHOICE_FEAT_SLUGS = new Set(['assurance']);
+const SKILL_CHOICE_FEAT_SLUGS = new Set(['assurance', 'skill-training']);
+const RECALL_KNOWLEDGE_SKILLS = ['arcana', 'crafting', 'lore', 'medicine', 'nature', 'occultism', 'religion', 'society'];
+// Skill feats whose data names no skill, though the rules text fixes which skills they apply to.
+const FEAT_SKILL_OVERRIDES = new Map([
+  ['additional-lore', ['lore']],
+  ['kreightons-cognitive-crossover', RECALL_KNOWLEDGE_SKILLS],
+]);
 
 export function filterFeatsByCategory(feats, category, searchQuery, targetLevel, options = {}) {
   const normalizedQuery = normalizeQuery(searchQuery);
@@ -138,7 +145,7 @@ export function isSkillChoiceFeat(feat) {
   return SKILL_CHOICE_FEAT_SLUGS.has(slug);
 }
 
-function matchesFeatSkills(feat, normalizedSkills, skillLabels, logic) {
+function matchesFeatSkills(feat, normalizedSkills, skillLabels, logic, chain = new Set()) {
   if (isSkillChoiceFeat(feat)) {
     const chosenSkills = Object.values(feat?.choices ?? {})
       .filter((value) => typeof value === 'string')
@@ -150,12 +157,49 @@ function matchesFeatSkills(feat, normalizedSkills, skillLabels, logic) {
   const prereqTexts = (feat?.system?.prerequisites?.value ?? [])
     .map((entry) => String((typeof entry === 'string' ? entry : entry?.value) ?? '').toLowerCase());
 
+  const impliedSkills = new Set(FEAT_SKILL_OVERRIDES.get(getFeatFilterSlug(feat)) ?? []);
+  if (prereqTexts.some((text) => text.includes('recall knowledge'))) {
+    for (const skill of RECALL_KNOWLEDGE_SKILLS) impliedSkills.add(skill);
+  }
+  const featChain = new Set([...chain, String(feat?.name ?? '').toLowerCase()]);
+  const prerequisiteSkillFeats = getPrerequisiteSkillFeats(prereqTexts, featChain);
+
   const matchesSkill = (skill) => {
     const label = skillLabels.get(skill) ?? skill;
-    return traits.includes(skill) || prereqTexts.some((text) => text.includes(skill) || text.includes(label));
+    return traits.includes(skill)
+      || impliedSkills.has(skill)
+      || prereqTexts.some((text) => text.includes(skill) || text.includes(label))
+      || prerequisiteSkillFeats.some((prereqFeat) => matchesFeatSkills(prereqFeat, [skill], skillLabels, logic, featChain));
   };
 
   return logic === 'and' ? normalizedSkills.every(matchesSkill) : normalizedSkills.some(matchesSkill);
+}
+
+// A skill feat that requires another skill feat (Mortal Healing -> Godless Healing) is for that feat's skill.
+function getPrerequisiteSkillFeats(prereqTexts, chain) {
+  if (prereqTexts.length === 0) return [];
+  const skillFeatsByName = getSkillFeatsByName();
+  return prereqTexts
+    .filter((text) => !chain.has(text))
+    .map((text) => skillFeatsByName.get(text))
+    .filter(Boolean);
+}
+
+const skillFeatIndexes = new WeakMap();
+
+function getSkillFeatsByName() {
+  const feats = getCachedFeats();
+  let index = skillFeatIndexes.get(feats);
+  if (!index) {
+    index = new Map();
+    for (const feat of feats) {
+      const traits = (feat?.system?.traits?.value ?? feat?.traits ?? []).map((trait) => String(trait).toLowerCase());
+      const name = String(feat?.name ?? '').toLowerCase();
+      if (name && traits.includes('skill') && !index.has(name)) index.set(name, feat);
+    }
+    skillFeatIndexes.set(feats, index);
+  }
+  return index;
 }
 
 export function filterByGeneralSkillFeats(feats, showSkillFeats) {

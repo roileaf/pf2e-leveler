@@ -10,6 +10,11 @@ import {
   filterByRarity,
   sortFeats,
 } from '../../../scripts/feats/feat-filter.js';
+import { getCachedFeats } from '../../../scripts/feats/feat-cache.js';
+
+jest.mock('../../../scripts/feats/feat-cache.js', () => ({
+  getCachedFeats: jest.fn(() => []),
+}));
 
 function makeFeat(name, level, traits, rarity = 'common', maxTakable = 1) {
   return {
@@ -1566,5 +1571,56 @@ describe('featMatchesSkills', () => {
     const athleticsFeat = makeFeat('Combat Climber', 1, ['general', 'skill']);
     athleticsFeat.system.prerequisites = { value: [{ value: 'trained in Athletics' }] };
     expect(filterBySkill([assurance, athleticsFeat], ['arcana', 'diplomacy']).map((feat) => feat.name)).toEqual(['Assurance']);
+  });
+
+  describe('feats that name no skill directly', () => {
+    const skillFeat = (name, prerequisites = [], traits = ['general', 'skill']) => {
+      const feat = makeFeat(name, 1, traits);
+      feat.system.prerequisites = { value: prerequisites.map((value) => ({ value })) };
+      return feat;
+    };
+    const mentalSkills = ['arcana', 'occultism', 'lore', 'diplomacy'];
+
+    afterEach(() => getCachedFeats.mockReturnValue([]));
+
+    test('matches Lore prerequisites when Lore is allowed', () => {
+      expect(featMatchesSkills(skillFeat('Battle Planner', ['expert in Warfare Lore']), mentalSkills)).toBe(true);
+      expect(featMatchesSkills(skillFeat('Battle Planner', ['expert in Warfare Lore']), ['athletics'])).toBe(false);
+    });
+
+    test('matches Recall Knowledge prerequisites to the Recall Knowledge skills', () => {
+      const dubious = skillFeat('Dubious Knowledge', ['trained in a skill with the Recall Knowledge action']);
+      expect(featMatchesSkills(dubious, mentalSkills)).toBe(true);
+      expect(featMatchesSkills(dubious, ['acrobatics', 'deception'])).toBe(false);
+    });
+
+    test('matches feats whose skill is fixed by the rules text', () => {
+      expect(featMatchesSkills(skillFeat('Additional Lore'), mentalSkills)).toBe(true);
+      expect(featMatchesSkills(skillFeat('Additional Lore'), ['acrobatics', 'arcana'])).toBe(false);
+      expect(featMatchesSkills({ ...skillFeat("Kreighton's Cognitive Crossover"), slug: 'kreightons-cognitive-crossover' }, ['arcana'])).toBe(true);
+    });
+
+    test('treats Skill Training like Assurance', () => {
+      const skillTraining = skillFeat('Skill Training', ['Intelligence +1']);
+      expect(featMatchesSkills(skillTraining, ['arcana'])).toBe(true);
+      expect(featMatchesSkills({ ...skillTraining, choices: { skill: 'athletics' } }, ['arcana'])).toBe(false);
+    });
+
+    test('inherits the skill of a prerequisite skill feat', () => {
+      const godlessHealing = skillFeat('Godless Healing', ['trained in Medicine', 'Battle Medicine']);
+      const mortalHealing = skillFeat('Mortal Healing', ['Godless Healing', 'You follow the Laws of Mortality']);
+      getCachedFeats.mockReturnValue([godlessHealing, mortalHealing]);
+
+      expect(filterBySkill([mortalHealing], ['medicine']).map((feat) => feat.name)).toEqual(['Mortal Healing']);
+      expect(featMatchesSkills(mortalHealing, ['arcana'])).toBe(false);
+    });
+
+    test('does not inherit skills through a dedication prerequisite', () => {
+      const dedication = skillFeat('Herbalist Dedication', ['trained in Nature'], ['archetype', 'dedication']);
+      const archetypeFeat = skillFeat('Poultice Preparation', ['Herbalist Dedication'], ['archetype', 'skill']);
+      getCachedFeats.mockReturnValue([dedication, archetypeFeat]);
+
+      expect(featMatchesSkills(archetypeFeat, ['nature'])).toBe(false);
+    });
   });
 });

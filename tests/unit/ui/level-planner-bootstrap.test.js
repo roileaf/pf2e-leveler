@@ -795,6 +795,7 @@ describe('LevelPlanner bootstrap from existing actor', () => {
     expect(preset.requiredSkills).toEqual(expect.arrayContaining([
       'arcana',
       'crafting',
+      'lore',
       'occultism',
       'society',
       'medicine',
