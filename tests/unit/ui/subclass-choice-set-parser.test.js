@@ -7105,4 +7105,46 @@ describe('CharacterWizard subclass choice-set parsing', () => {
       expect(choiceSet.options.map((option) => option.label)).toEqual(['Buckler', 'Steel Shield']);
     });
   });
+  it('limits Parallel Breakthrough to 1st-rank psi cantrips', async () => {
+    const spell = (slug, name, level, traits) => ({
+      uuid: `Compendium.pf2e.spells-srd.Item.${slug}`,
+      name,
+      img: 'icons/svg/book.svg',
+      type: 'spell',
+      slug,
+      traits,
+      otherTags: [],
+      rarity: 'common',
+      level,
+    });
+    const wizard = new CharacterWizard(createMockActor());
+    wizard._loadCompendium = jest.fn(async (key) => {
+      if (key === 'pf2e.spells-srd') {
+        return [
+          spell('daze', 'Daze', 1, ['cantrip', 'mental']),
+          spell('telekinetic-rend', 'Telekinetic Rend', 1, ['cantrip', 'psychic']),
+          spell('shatter-mind', 'Shatter Mind', 3, ['cantrip', 'psychic']),
+          spell('fireball', 'Fireball', 3, ['fire']),
+        ];
+      }
+      if (key === 'pf2e.feats-srd') {
+        return [{ uuid: 'Compendium.pf2e.feats-srd.Item.parallel-breakthrough', name: 'Parallel Breakthrough', type: 'feat', slug: 'parallel-breakthrough', traits: ['psychic'], level: 6 }];
+      }
+      return [];
+    });
+
+    const [choiceSet] = await parseChoiceSets(wizard, [{
+      key: 'ChoiceSet',
+      flag: 'spell',
+      prompt: 'PF2E.SpecificRule.Prompt.Spell',
+      choices: {
+        itemType: 'spell',
+        slugsAsValues: true,
+        filter: [{ or: ['item:slug:daze', 'item:slug:telekinetic-projectile', 'item:trait:psychic'] }],
+      },
+    }], {}, { name: 'Parallel Breakthrough', slug: 'parallel-breakthrough' });
+
+    expect(choiceSet.options.map((option) => option.label)).toEqual(['Daze', 'Telekinetic Rend']);
+    expect(wizard._loadCompendium).not.toHaveBeenCalledWith('pf2e.feats-srd');
+  });
 });

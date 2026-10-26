@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.12.7
+
+### Fixed
+
+- **Parallel Breakthrough psi cantrip** - The psi cantrip choice now lists only 1st-rank psi cantrips and the eligible common cantrips. Psychic feats and deeper psi cantrips no longer appear
+
 ## 3.12.6
 
 ### Fixed

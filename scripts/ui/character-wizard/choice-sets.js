@@ -1376,13 +1376,14 @@ async function resolveChoiceSetOptions(wizard, rule, currentChoices = {}, source
     return resolveConfigChoiceOptions(rule.choices.config);
   }
 
-  const resolvedFilter = withShieldImplementBulkFilter(
+  const resolvedFilter = withRulesTextFilters(
     withKineticGateImpulseLevelFilter(
       resolveChoiceSetFilterPlaceholders(rule.choices.filter ?? [], wizard, currentChoices),
       rule,
       sourceItem,
     ),
     rule,
+    sourceItem,
   );
   const candidates = await loadChoiceSetCandidates(wizard, {
     ...rule.choices,
@@ -1403,7 +1404,7 @@ async function resolveChoiceSetOptions(wizard, rule, currentChoices = {}, source
       if (itemType === 'heritage') return type === 'heritage';
       if (itemType === 'deity') return type === 'deity' || category === 'deity';
       if (itemType === 'classfeature') return category === 'classfeature';
-      if (PHYSICAL_CHOICE_ITEM_TYPES.has(itemType)) return type === itemType;
+      if (EXACT_TYPE_CHOICE_ITEM_TYPES.has(itemType)) return type === itemType;
       return true;
     })
     .filter((item) => matchesChoiceSetFilters(item, resolvedFilter))
@@ -1437,10 +1438,26 @@ function withKineticGateImpulseLevelFilter(filter, rule, sourceItem) {
   return [...(Array.isArray(filter) ? filter : [filter]).filter(Boolean), 'item:level:1'];
 }
 
-// The system's Shield implement ChoiceSet only filters by type, but the implement must be 1 Bulk or less.
-function withShieldImplementBulkFilter(filter, rule) {
-  if (rule?.flag !== 'shieldImplement') return filter;
-  return [...(Array.isArray(filter) ? filter : [filter]).filter(Boolean), { lte: ['item:bulk', 1] }];
+// Restrictions stated in the rules text that the system's ChoiceSet filters leave out.
+const RULES_TEXT_CHOICE_FILTERS = [
+  {
+    // Shield implement: a shield of 1 Bulk or less.
+    applies: (rule) => rule?.flag === 'shieldImplement',
+    filters: [{ lte: ['item:bulk', 1] }],
+  },
+  {
+    // Parallel Breakthrough: a 1st-rank psi cantrip.
+    applies: (_rule, sourceItem) => normalizeSourceSlug(sourceItem) === 'parallel-breakthrough',
+    filters: ['item:trait:cantrip', 'item:level:1'],
+  },
+];
+
+function withRulesTextFilters(filter, rule, sourceItem) {
+  const extra = RULES_TEXT_CHOICE_FILTERS
+    .filter((entry) => entry.applies(rule, sourceItem))
+    .flatMap((entry) => entry.filters);
+  if (extra.length === 0) return filter;
+  return [...(Array.isArray(filter) ? filter : [filter]).filter(Boolean), ...extra];
 }
 
 function isKineticGateImpulseChoiceSet(rule, sourceItem) {
@@ -2621,7 +2638,7 @@ function getChoiceSetPackKeys(itemType, filters) {
   if (PHYSICAL_CHOICE_ITEM_FILTERS.some((filter) => flattenedFilters.includes(filter))) addCategoryKeys(keys, 'equipment');
   if (flattenedFilters.includes('item:type:ancestry') || flattenedFilters.includes('item:ancestry:')) addCategoryKeys(keys, 'ancestries');
   if (flattenedFilters.includes('item:type:heritage') || flattenedFilters.includes('item:ancestry:')) addCategoryKeys(keys, 'heritages');
-  if (!PHYSICAL_CHOICE_ITEM_TYPES.has(normalizedType) && (flattenedFilters.includes('item:tag:') || flattenedFilters.includes('item:trait:'))) {
+  if (!EXACT_TYPE_CHOICE_ITEM_TYPES.has(normalizedType) && (flattenedFilters.includes('item:tag:') || flattenedFilters.includes('item:trait:'))) {
     addCategoryKeys(keys, 'classFeatures');
     addCategoryKeys(keys, 'feats');
   }
@@ -2647,6 +2664,9 @@ const PHYSICAL_CHOICE_ITEM_TYPES = new Set([
 ]);
 
 const PHYSICAL_CHOICE_ITEM_FILTERS = [...PHYSICAL_CHOICE_ITEM_TYPES].map((type) => `item:type:${type}`);
+
+// itemTypes whose candidates must be exactly that document type.
+const EXACT_TYPE_CHOICE_ITEM_TYPES = new Set([...PHYSICAL_CHOICE_ITEM_TYPES, 'spell', 'action']);
 
 function safeSerializeChoiceFilters(filters) {
   return String(JSON.stringify(filters ?? []) ?? '');
