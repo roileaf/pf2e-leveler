@@ -133,6 +133,20 @@ describe('parsePrerequisite', () => {
     expect(result.isModifier).toBe(true);
   });
 
+  test.each([
+    ['Force +2', 'str'],
+    ['Dextérité +2', 'dex'],
+    ['Sagesse +1', 'wis'],
+    ['Charisme +2', 'cha'],
+    ['Stärke +2', 'str'],
+    ['Geschicklichkeit +2', 'dex'],
+    ['Weisheit +1', 'wis'],
+  ])('parses localized ability requirement %s', (text, ability) => {
+    expect(parsePrerequisite(text)).toEqual(
+      expect.objectContaining({ type: 'ability', ability, isModifier: true, text }),
+    );
+  });
+
   test('parses ability modifier requirement with minus sign', () => {
     const result = parsePrerequisite('Constitution -1');
     expect(result.type).toBe('ability');

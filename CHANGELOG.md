@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.12.9
+
+### Fixed
+
+- **Localized ability prerequisites** - Ability score prerequisites in French or German (such as "Force +2" and "Dextérité +2" on Fighter Dedication) are now recognized, so dedications and feats are no longer blocked for characters who meet them ([#116](https://github.com/roileaf/pf2e-leveler/issues/116))
+
 ## 3.12.8
 
 ### Fixed

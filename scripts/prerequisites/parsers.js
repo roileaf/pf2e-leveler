@@ -66,9 +66,19 @@ const ABILITY_NAMES = {
   intelligence: 'int',
   wisdom: 'wis',
   charisma: 'cha',
+  force: 'str',
+  dexterite: 'dex',
+  sagesse: 'wis',
+  charisme: 'cha',
+  starke: 'str',
+  geschicklichkeit: 'dex',
+  konstitution: 'con',
+  intelligenz: 'int',
+  weisheit: 'wis',
 };
 
-const ABILITY_PATTERN = new RegExp(`(${Object.keys(ABILITY_NAMES).join('|')})\\s+([+-]?\\d+)`, 'i');
+// Matched against accent-stripped text so localized names like "Dextérité" resolve.
+const ABILITY_PATTERN = new RegExp(`\\b(${Object.keys(ABILITY_NAMES).join('|')})\\s+([+-]?\\d+)`, 'i');
 
 const LEVEL_PATTERN = /(\d+)(?:st|nd|rd|th)\s+level/i;
 const CLASS_HP_PATTERN =
@@ -471,10 +481,10 @@ function tryParseWeaponFamilyProficiency(text, fullText = text) {
 }
 
 function tryParseAbilityRequirement(text, fullText = text) {
-  const match = text.match(ABILITY_PATTERN);
+  const match = normalizeRequirementText(text).match(ABILITY_PATTERN);
   if (!match) return null;
 
-  const abilityName = match[1].toLowerCase();
+  const abilityName = match[1];
   const ability = ABILITY_NAMES[abilityName];
   const raw = match[2];
   const minValue = parseInt(raw, 10);
