@@ -1,5 +1,6 @@
 import { applySpells } from '../../../scripts/apply/apply-spells.js';
 import { ClassRegistry } from '../../../scripts/classes/registry.js';
+import { CLERIC } from '../../../scripts/classes/cleric.js';
 import { DRUID } from '../../../scripts/classes/druid.js';
 import { FIGHTER } from '../../../scripts/classes/fighter.js';
 import { MAGUS } from '../../../scripts/classes/magus.js';
@@ -12,6 +13,7 @@ describe('applySpells', () => {
 
   beforeAll(() => {
     ClassRegistry.clear();
+    ClassRegistry.register(CLERIC);
     ClassRegistry.register(DRUID);
     ClassRegistry.register(FIGHTER);
     ClassRegistry.register(SORCERER);
@@ -534,6 +536,40 @@ describe('applySpells', () => {
     expect(added).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: 'Normal Spell', rank: 1 }),
       expect.objectContaining({ name: 'Custom Spell', rank: 1 }),
+    ]));
+  });
+
+  test('Battle Creed cleric keeps only the two highest slot ranks', async () => {
+    const clericActor = {
+      items: [
+        { id: 'battle-creed', type: 'feat', slug: 'battle-creed', system: { traits: { otherTags: ['class-archetype', 'cleric-doctrine'] } } },
+        {
+          id: 'cleric-entry',
+          type: 'spellcastingEntry',
+          name: 'Cleric Spells',
+          system: {
+            tradition: { value: 'divine' },
+            prepared: { value: 'prepared' },
+            ability: { value: 'wis' },
+          },
+        },
+      ],
+      system: { resources: { focus: { max: 0, value: 0 } } },
+      createEmbeddedDocuments: jest.fn(async (_type, docs) => docs.map((doc, index) => ({ id: `created-${index}`, ...doc }))),
+      updateEmbeddedDocuments: jest.fn(async () => []),
+      update: jest.fn(async () => {}),
+    };
+
+    await applySpells(clericActor, { classSlug: 'cleric', levels: { 5: {} } }, 5);
+
+    expect(clericActor.updateEmbeddedDocuments).toHaveBeenCalledWith('Item', expect.arrayContaining([
+      expect.objectContaining({
+        _id: 'cleric-entry',
+        'system.slots.slot1.max': 0,
+        'system.slots.slot2.max': 2,
+        'system.slots.slot3.max': 2,
+        'system.slots.slot4.max': 0,
+      }),
     ]));
   });
 

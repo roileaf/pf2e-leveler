@@ -1,4 +1,6 @@
 import { ClassRegistry } from '../../../scripts/classes/registry.js';
+import { CLERIC } from '../../../scripts/classes/cleric.js';
+import { BOUNDED_SPELL_SLOTS } from '../../../scripts/classes/bounded-spell-slots.js';
 
 describe('ClassRegistry', () => {
   beforeEach(() => {
@@ -47,5 +49,17 @@ describe('ClassRegistry', () => {
     ClassRegistry.register({ slug: 'fighter', hp: 10 });
     ClassRegistry.register({ slug: 'fighter', hp: 12 });
     expect(ClassRegistry.get('fighter').hp).toBe(12);
+  });
+
+  test('Battle Creed clerics use bounded spell slots', () => {
+    ClassRegistry.register(CLERIC);
+    const actor = { items: [{ type: 'feat', slug: 'battle-creed' }] };
+
+    const classDef = ClassRegistry.get('cleric', actor);
+
+    expect(classDef.spellcasting.bounded).toBe(true);
+    expect(classDef.spellcasting.slots).toBe(BOUNDED_SPELL_SLOTS);
+    expect(classDef.spellcasting.slots[5]).toEqual({ cantrips: 5, 2: 2, 3: 2 });
+    expect(ClassRegistry.get('cleric', { items: [] }).spellcasting.slots).toBe(CLERIC.spellcasting.slots);
   });
 });

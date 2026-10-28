@@ -375,7 +375,7 @@ export class CasterBaseHandler extends BaseClassHandler {
 
   _buildPrimarySlotUpdate(entry, slots, classDef) {
     const update = { _id: entry.id };
-    const shouldClearMissingRanks = classDef?.slug === 'magus';
+    const shouldClearMissingRanks = classDef?.slug === 'magus' || classDef?.spellcasting?.bounded === true;
 
     if (shouldClearMissingRanks) {
       update['system.slots.slot0.max'] = Number(slots.cantrips ?? 0);

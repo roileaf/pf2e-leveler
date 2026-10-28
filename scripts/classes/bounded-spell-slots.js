@@ -1,0 +1,23 @@
+// Two slots of each of the two highest ranks (magus, summoner, Battle Creed cleric).
+export const BOUNDED_SPELL_SLOTS = {
+  1: { cantrips: 5, 1: 1 },
+  2: { cantrips: 5, 1: 2 },
+  3: { cantrips: 5, 1: 2, 2: 1 },
+  4: { cantrips: 5, 1: 2, 2: 2 },
+  5: { cantrips: 5, 2: 2, 3: 2 },
+  6: { cantrips: 5, 2: 2, 3: 2 },
+  7: { cantrips: 5, 3: 2, 4: 2 },
+  8: { cantrips: 5, 3: 2, 4: 2 },
+  9: { cantrips: 5, 4: 2, 5: 2 },
+  10: { cantrips: 5, 4: 2, 5: 2 },
+  11: { cantrips: 5, 5: 2, 6: 2 },
+  12: { cantrips: 5, 5: 2, 6: 2 },
+  13: { cantrips: 5, 6: 2, 7: 2 },
+  14: { cantrips: 5, 6: 2, 7: 2 },
+  15: { cantrips: 5, 7: 2, 8: 2 },
+  16: { cantrips: 5, 7: 2, 8: 2 },
+  17: { cantrips: 5, 8: 2, 9: 2 },
+  18: { cantrips: 5, 8: 2, 9: 2 },
+  19: { cantrips: 5, 8: 2, 9: 2 },
+  20: { cantrips: 5, 8: 2, 9: 2 },
+};

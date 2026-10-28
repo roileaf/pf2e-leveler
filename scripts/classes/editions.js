@@ -1,3 +1,5 @@
+import { BOUNDED_SPELL_SLOTS } from './bounded-spell-slots.js';
+
 export function isRemasteredClass(actor, classSlug, selectedClass = null) {
   const slug = (item) => item?.slug ?? item?.system?.slug;
   const classItem = actor?.items?.find((item) => item.type === 'class' && slug(item) === classSlug)
@@ -29,7 +31,14 @@ const remasteredMagusFeatures = {
   juggernaut: { name: 'Spell-Tempered Body', key: 'spell-tempered-body', proficiencies: { fortitude: 3 } },
 };
 
+function hasBattleCreed(actor) {
+  return actor?.items?.some((item) => item.type === 'feat' && (item.slug ?? item.system?.slug) === 'battle-creed') ?? false;
+}
+
 export function resolveClassEdition(classDef, actor, selectedClass = null) {
+  if (classDef?.slug === 'cleric' && hasBattleCreed(actor)) {
+    return { ...classDef, spellcasting: { ...classDef.spellcasting, bounded: true, slots: BOUNDED_SPELL_SLOTS } };
+  }
   if (!['magus', 'summoner'].includes(classDef?.slug) || !isRemasteredClass(actor, classDef.slug, selectedClass)) return classDef;
   return {
     ...classDef,
@@ -42,6 +51,6 @@ export function resolveClassEdition(classDef, actor, selectedClass = null) {
       }
       return feature;
     }),
-    spellcasting: { ...classDef.spellcasting, slots: remasteredSlots },
+    spellcasting: { ...classDef.spellcasting, bounded: false, slots: remasteredSlots },
   };
 }

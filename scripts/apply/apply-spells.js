@@ -403,7 +403,9 @@ async function updateSpellSlots(actor, entries, slots, classDef, level) {
     } else {
       const flexible = isFlexibleClassEntry(entries.primary, classDef);
       const effectiveSlots = flexible ? getFlexibleSpellSlots(slots, level) : slots;
-      const update = buildSlotUpdate(entries.primary, effectiveSlots, 0);
+      const update = sc.bounded
+        ? buildBoundedPrimarySlotUpdate(entries.primary, effectiveSlots)
+        : buildSlotUpdate(entries.primary, effectiveSlots, 0);
       if (flexible) {
         update['system.slots.slot0.max'] = effectiveSlots.cantrips;
         update['system.slots.slot0.value'] = effectiveSlots.cantrips;
