@@ -1,3 +1,10 @@
+## 3.12.10
+
+### Fixed
+
+- **Avenger racket key attribute** - Rogues with the Avenger racket can now choose Strength or Dexterity as their key attribute
+- **Battle Creed spell slots** - Battle Creed clerics now get the restricted Battle Creed spell progression (two slots of each of their two highest ranks) instead of the full cleric slot table
+
 # Changelog
 
 ## 3.12.9
