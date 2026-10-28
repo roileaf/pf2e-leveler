@@ -68,4 +68,16 @@ describe('RogueHandler', () => {
       },
     }, { keyAbility: ['dex'] })).resolves.toEqual(['dex', 'int', 'cha']);
   });
+
+  it('adds key attributes declared by the racket item, such as Avenger', async () => {
+    global.fromUuid = jest.fn(async () => ({
+      slug: 'avenger',
+      system: { subfeatures: { keyOptions: ['str'] } },
+    }));
+
+    const handler = new RogueHandler();
+    await expect(handler.getKeyAbilityOptions({
+      subclass: { slug: 'avenger', uuid: 'Compendium.pf2e.classfeatures.Item.ONKUKCdsbGwhVoUb' },
+    }, { keyAbility: ['dex'] })).resolves.toEqual(['dex', 'str']);
+  });
 });

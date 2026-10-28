@@ -16,6 +16,9 @@ export class RogueHandler extends BaseClassHandler {
       return [...new Set([...baseOptions, ...ROGUE_RACKET_KEY_ABILITIES[subclassSlug]])];
     }
 
+    const racketKeyOptions = await this._getRacketKeyOptions(data.subclass);
+    if (racketKeyOptions.length > 0) return [...new Set([...baseOptions, ...racketKeyOptions])];
+
     if (subclassSlug === 'eldritch-trickster') {
       const dedicationOptions = await this._getEldritchTricksterDedicationKeyAbilities(data);
       if (dedicationOptions.length > 0) return [...new Set([...baseOptions, ...dedicationOptions])];
@@ -23,6 +26,14 @@ export class RogueHandler extends BaseClassHandler {
     }
 
     return baseOptions;
+  }
+
+  // Class-archetype rackets (e.g. Avenger) declare extra key attributes on the item itself.
+  async _getRacketKeyOptions(subclass) {
+    if (!subclass?.uuid) return [];
+    const item = await fromUuid(subclass.uuid).catch(() => null);
+    const keyOptions = item?.system?.subfeatures?.keyOptions;
+    return Array.isArray(keyOptions) ? keyOptions : [];
   }
 
   async _getEldritchTricksterDedicationKeyAbilities(data) {
