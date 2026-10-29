@@ -954,6 +954,121 @@ export async function creationEquipmentBudgetRemainderAudit(data) {
   };
 }
 
+async function packDocumentByName(packId, name) {
+  const pack = game.packs.get(packId);
+  if (!pack) throw Error(`Compendium unavailable: ${packId}`);
+  const entry = (await pack.getIndex()).find((item) => item.name === name);
+  if (!entry) throw Error(`${name} missing from ${packId}`);
+  return pack.getDocument(entry._id);
+}
+
+export async function wizardWarriorOfLegendAudit(data) {
+  const actor = ownedActor(data);
+  const wizard = await openWizardFor(data);
+  await selectCoreCreation(wizard, 'fighter');
+  if (wizard.data.class?.slug !== 'fighter') throw Error('Fighter class missing from catalog');
+  await clickWizardStep(wizard, 'class');
+
+  const checkbox = await waitFor(
+    () => [...wizard.element.querySelectorAll('[data-action="setClassArchetype"]')]
+      .find((input) => input.closest('.wizard-feat-slot-card')?.textContent.includes('Warrior of Legend')),
+    'Warrior of Legend option did not render on the class step',
+  );
+  checkbox.checked = true;
+  checkbox.dispatchEvent(new Event('change'));
+  const archetype = await waitFor(
+    () => wizard.data.classArchetype?.uuid === checkbox.dataset.uuid && wizard.data.classArchetype,
+    'Warrior of Legend selection did not persist',
+  );
+  await waitFor(
+    () => wizard.element.querySelector(`[data-action="setClassArchetype"][data-uuid="${CSS.escape(archetype.uuid)}"]`)?.checked,
+    'Warrior of Legend checkbox did not stay checked after rerender',
+  );
+
+  await clickWizardStep(wizard, 'skills');
+  const { buildSkillContext } = await import('/modules/pf2e-leveler/scripts/ui/character-wizard/skills-languages.js');
+  const skills = await buildSkillContext(wizard);
+  const grantedBy = (slug) => skills.find((entry) => entry.slug === slug && entry.autoTrained)?.source;
+
+  const beforeMessages = new Set(game.messages.keys());
+  const { applyCreation } = await import('/modules/pf2e-leveler/scripts/creation/apply-creation.js');
+  try {
+    await applyCreation(actor, {
+      ancestry: null,
+      heritage: null,
+      background: null,
+      class: null,
+      dualClass: null,
+      subclass: null,
+      dualSubclass: null,
+      classArchetype: archetype,
+      boosts: { free: [] },
+      languages: [],
+      skills: [],
+      lores: [],
+      ancestryFeat: null,
+      ancestryParagonFeat: null,
+      classFeat: null,
+      dualClassFeat: null,
+      skillFeat: null,
+      grantedFeatSections: [],
+      grantedFeatChoices: { [archetype.uuid]: { warriorOfLegendCursedWeakness: 'slashing' } },
+      featGrants: [],
+      permanentItems: [],
+      equipment: [],
+      spells: { cantrips: [], rank1: [] },
+    });
+  } finally {
+    await markNewMessages(data.runId, beforeMessages);
+  }
+
+  const { getRequiredSecondLevelClassFeatForActor } = await import('/modules/pf2e-leveler/scripts/classes/class-archetype-requirements.js');
+  return {
+    optionShown: true,
+    selectionPersisted: true,
+    skillsGrantedInWizard: grantedBy('acrobatics') === 'Warrior of Legend' && grantedBy('athletics') === 'Warrior of Legend',
+    itemApplied: actor.items.some((item) => item.sourceId === archetype.uuid),
+    skillsTrained: actor.system.skills.acrobatics.rank >= 1 && actor.system.skills.athletics.rank >= 1,
+    dedicationRequiredAtLevel2: getRequiredSecondLevelClassFeatForActor(actor, 'fighter')?.slug === 'warrior-of-legend-dedication',
+  };
+}
+
+export async function wizardGladiatorLoreAudit(data) {
+  const wizard = await openWizardFor(data);
+  await clickWizardStep(wizard, 'background');
+  const backgrounds = await waitForCatalogEntries(wizard, 'background');
+  const documents = await Promise.all(
+    backgrounds.map(async (entry) => ({ ...entry, document: await fromUuid(entry.uuid) })),
+  );
+  const gladiator = documents.find((entry) => entry.document?.slug === 'gladiator');
+  if (!gladiator) throw Error('Gladiator background missing from catalog');
+  await clickItemByUuid(wizard, gladiator.uuid);
+  const lores = await wizard._getBackgroundLores();
+  return {
+    singleLore: lores.length === 1,
+    matchesStructuredLore: lores[0]?.name === gladiator.document.system.trainedSkills.lore[0],
+  };
+}
+
+export async function seneschalPrerequisiteAudit() {
+  const [dedication, seneschal] = await Promise.all([
+    packDocumentByName('pf2e.feats-srd', 'Seneschal Witch Dedication'),
+    packDocumentByName('pf2e.classfeatures', 'Seneschal'),
+  ]);
+  const { checkPrerequisites } = await import('/modules/pf2e-leveler/scripts/prerequisites/prerequisite-checker.js');
+  const witchState = (classFeatures) => ({
+    level: 2,
+    class: { slug: 'witch' },
+    classes: [{ slug: 'witch' }],
+    feats: new Set(),
+    classFeatures: new Set(classFeatures),
+  });
+  return {
+    metWithSeneschal: checkPrerequisites(dedication, witchState([seneschal.slug])).met === true,
+    unmetWithoutSeneschal: checkPrerequisites(dedication, witchState([])).met === false,
+  };
+}
+
 export async function plannerLevelsAudit(data) {
   const planner = await openPlannerFor(data);
   const levels = [...planner.element.querySelectorAll('[data-action="selectLevel"]')].map((row) =>

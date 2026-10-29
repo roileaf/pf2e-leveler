@@ -365,6 +365,51 @@ export const issueRegressionCases = [
       },
     ],
   },
+  {
+    name: 'creation-warrior-of-legend-class-archetype',
+    area: 'issues',
+    profiles: ['foundry14-pf2e', 'foundry14-pf2e-sf2e-anachronism'],
+    fixture: true,
+    steps: [
+      {
+        session: 'gm',
+        operation: 'wizardWarriorOfLegendAudit',
+        expect: {
+          optionShown: true,
+          selectionPersisted: true,
+          skillsGrantedInWizard: true,
+          itemApplied: true,
+          skillsTrained: true,
+          dedicationRequiredAtLevel2: true,
+        },
+      },
+    ],
+  },
+  {
+    name: 'creation-gladiator-single-lore',
+    area: 'issues',
+    profiles: ['foundry14-pf2e', 'foundry14-pf2e-sf2e-anachronism'],
+    fixture: true,
+    steps: [
+      {
+        session: 'gm',
+        operation: 'wizardGladiatorLoreAudit',
+        expect: { singleLore: true, matchesStructuredLore: true },
+      },
+    ],
+  },
+  {
+    name: 'prerequisite-seneschal-witch',
+    area: 'issues',
+    profiles: ['foundry14-pf2e', 'foundry14-pf2e-sf2e-anachronism'],
+    steps: [
+      {
+        session: 'gm',
+        operation: 'seneschalPrerequisiteAudit',
+        expect: { metWithSeneschal: true, unmetWithoutSeneschal: true },
+      },
+    ],
+  },
 ];
 
 export const variantCases = [

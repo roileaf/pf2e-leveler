@@ -63,8 +63,9 @@ async function login(context, url, credentials, isGM) {
       (collectingStartup ? report.startupErrors : browserErrors).push(safeError(message.text()));
   });
   await page.goto(`${url}/join`);
-  const accountSelect = page.locator('select[name="userid"]');
-  await page.locator('select[name="userid"], input[name="username"]').first().waitFor();
+  // Foundry 14 renamed the account select from userid to userId.
+  const accountSelect = page.locator('select[name="userid"], select[name="userId"]');
+  await page.locator('select[name="userid"], select[name="userId"], input[name="username"]').first().waitFor();
   assertQaWorld(await page.evaluate(() => globalThis.game?.world?.id), expectedWorld);
   if (await accountSelect.count()) {
     const options = await accountSelect.locator('option').evaluateAll((entries) =>
