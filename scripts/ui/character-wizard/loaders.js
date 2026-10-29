@@ -2,6 +2,8 @@ import { ANCESTRY_TRAIT_ALIASES, SUBCLASS_TAGS } from '../../constants.js';
 import { getCompendiumKeysForCategory } from '../../compendiums/catalog.js';
 import { filterEntriesByRarityForCurrentUser } from '../../access/player-content.js';
 import { createMixedAncestryHeritage } from '../../heritages/mixed-ancestry.js';
+import { ClassRegistry } from '../../classes/registry.js';
+import { isClassArchetypeEligible } from '../../classes/class-archetypes.js';
 import { slugify } from '../../utils/pf2e-api.js';
 import { normalizeSkillSlug } from '../../utils/skill-slugs.js';
 import {
@@ -360,20 +362,22 @@ export async function loadSubclassesForClass(wizard, classEntry) {
   });
 }
 
-// Class archetypes such as Warrior of Legend or Seneschal are not tagged as a subclass,
-// so the class's own subclass choice never offers them.
+// Class archetypes such as Warrior of Legend, Seneschal or Wellspring Magic are not tagged as a
+// subclass, so the class's own subclass choice never offers them. Options that depend on the
+// subclass's tradition are narrowed later with isClassArchetypeEligible.
 export async function loadOptionalClassArchetypes(wizard, classEntry) {
   const classSlug = classEntry?.slug;
   if (!classSlug) return [];
   const cacheKey = `optional-class-archetypes-${classSlug}`;
   if (wizard._compendiumCache[cacheKey]) return wizard._compendiumCache[cacheKey];
 
+  const classDef = ClassRegistry.get(classSlug) ?? { slug: classSlug };
   const subclassTag = classEntry.subclassTag ?? SUBCLASS_TAGS[classSlug] ?? null;
   const docs = await loadCompendiumCategory(wizard, 'classFeatures');
   const items = await Promise.all(docs
     .filter((d) => (d.otherTags ?? []).includes('class-archetype'))
-    .filter((d) => (d.traits ?? []).includes(classSlug))
     .filter((d) => !subclassTag || !(d.otherTags ?? []).includes(subclassTag))
+    .filter((d) => isClassArchetypeEligible(d, classDef))
     .map(async (d) => {
       const source = await wizard._getCachedDocument(d.uuid);
       return {
@@ -381,6 +385,7 @@ export async function loadOptionalClassArchetypes(wizard, classEntry) {
         name: d.name,
         img: d.img,
         slug: d.slug ?? null,
+        traits: d.traits ?? [],
         grantedSkills: wizard._parseGrantedSkills(source?.system?.rules ?? [], source?.system?.description?.value ?? ''),
       };
     }));

@@ -12,6 +12,7 @@ import { registerHandlebarsHelpers } from '../../hooks/lifecycle.js';
 import { getClassHandler } from '../../creation/class-handlers/registry.js';
 import { isAncestralParagonEnabled, isDualClassEnabled, isMythicEnabled, slugify } from '../../utils/pf2e-api.js';
 import { getClassArchetypeGrantedSkills, setMythicCalling } from '../../creation/creation-model.js';
+import { isClassArchetypeEligible } from '../../classes/class-archetypes.js';
 import { normalizeSkillSlug } from '../../utils/skill-slugs.js';
 import { inferSf2eSpellcastingTraditionFromItem } from '../../utils/sf2e-spellcasting.js';
 import { captureScrollState, restoreScrollState } from '../shared/scroll-state.js';
@@ -2382,17 +2383,19 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _buildClassArchetypeOptions() {
     const targets = [
-      { target: 'primary', classEntry: this.data.class, selected: this.data.classArchetype },
-      { target: 'secondary', classEntry: this.data.dualClass, selected: this.data.dualClassArchetype },
+      { target: 'primary', classEntry: this.data.class, subclass: this.data.subclass, selected: this.data.classArchetype },
+      { target: 'secondary', classEntry: this.data.dualClass, subclass: this.data.dualSubclass, selected: this.data.dualClassArchetype },
     ].filter(({ classEntry }) => !!classEntry?.slug);
-    const groups = await Promise.all(targets.map(async ({ target, classEntry, selected }) =>
-      (await this._loadOptionalClassArchetypes(classEntry)).map((option) => ({
-        target,
-        className: classEntry.name,
-        uuid: option.uuid,
-        name: option.name,
-        selected: selected?.uuid === option.uuid,
-      }))));
+    const groups = await Promise.all(targets.map(async ({ target, classEntry, subclass, selected }) =>
+      (await this._loadOptionalClassArchetypes(classEntry))
+        .filter((option) => isClassArchetypeEligible(option, ClassRegistry.get(classEntry.slug) ?? classEntry, subclass))
+        .map((option) => ({
+          target,
+          className: classEntry.name,
+          uuid: option.uuid,
+          name: option.name,
+          selected: selected?.uuid === option.uuid,
+        }))));
     return groups.flat();
   }
 

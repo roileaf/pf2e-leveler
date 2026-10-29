@@ -9,6 +9,7 @@ import { resolveSf2eSpellcastingTradition } from '../utils/sf2e-spellcasting.js'
 import { findMagusPrimaryEntry, isRemasteredMagus } from '../utils/magus-spellcasting.js';
 import { getSpellSelectionRank } from '../utils/signature-spells.js';
 import { findClassSpellcastingEntry, isFlexibleClassEntry, getFlexibleSpellSlots, ensureFlexibleRank10Entry } from '../utils/flexible-spellcasting.js';
+import { getWellspringSpellSlots, hasWellspringMagic } from '../classes/class-archetypes.js';
 
 const FEAT_KEYS = ['classFeats', 'skillFeats', 'generalFeats', 'ancestryFeats', 'archetypeFeats', 'mythicFeats', 'dualClassFeats', 'customFeats'];
 const MAGUS_STUDIOUS_ENTRY_FLAG = 'magusStudiousEntry';
@@ -402,7 +403,8 @@ async function updateSpellSlots(actor, entries, slots, classDef, level) {
       if (entries.studious && entries.studious.id !== entries.primary.id) updates.push(buildMagusStudiousSlotUpdate(entries.studious, getMagusStudiousRankForLevel(level)));
     } else {
       const flexible = isFlexibleClassEntry(entries.primary, classDef);
-      const effectiveSlots = flexible ? getFlexibleSpellSlots(slots, level) : slots;
+      const classSlots = sc.type === 'spontaneous' && hasWellspringMagic(actor) ? getWellspringSpellSlots(slots) : slots;
+      const effectiveSlots = flexible ? getFlexibleSpellSlots(classSlots, level) : classSlots;
       const update = sc.bounded
         ? buildBoundedPrimarySlotUpdate(entries.primary, effectiveSlots)
         : buildSlotUpdate(entries.primary, effectiveSlots, 0);

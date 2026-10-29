@@ -1,4 +1,6 @@
 import { SUBCLASS_TAGS } from '../constants.js';
+import { ClassRegistry } from './registry.js';
+import { isClassArchetypeEligible } from './class-archetypes.js';
 import { slugify } from '../utils/pf2e-api.js';
 import { findClassSpellcastingEntry, supportsFlexiblePreparation } from '../utils/flexible-spellcasting.js';
 
@@ -23,13 +25,14 @@ export function getSelectedSubclassItem(actor, classSlug = actor?.class?.slug ??
 function getUntaggedClassArchetypeItems(actor, classSlug) {
   const subclassTag = SUBCLASS_TAGS[classSlug];
   if (!actor || !classSlug) return [];
+  const classDef = ClassRegistry.get(classSlug) ?? { slug: classSlug };
   const actorItems = actor?.items?.contents
     ?? (Array.isArray(actor?.items) ? actor.items : actor?.items?.filter?.(() => true) ?? []);
   return actorItems.filter((item) => {
     const otherTags = item?.system?.traits?.otherTags ?? [];
     return item?.type === 'feat'
       && otherTags.includes('class-archetype')
-      && (item.system?.traits?.value ?? []).includes(classSlug)
+      && isClassArchetypeEligible({ slug: item.slug ?? item.system?.slug, traits: item.system?.traits?.value ?? [] }, classDef)
       && !(subclassTag && matchesTagFamily(otherTags, subclassTag));
   });
 }

@@ -7,6 +7,7 @@ import { classUsesPhysicalSpellbook, ensureActorHasSpellbook } from '../../utils
 import { findMagusPrimaryEntry, isRemasteredMagus } from '../../utils/magus-spellcasting.js';
 import { refillFocusPool } from '../../utils/focus-pool.js';
 import { supportsFlexiblePreparation, getFlexibleSpellSlots, findClassSpellcastingEntry, ensureFlexibleRank10Entry } from '../../utils/flexible-spellcasting.js';
+import { getWellspringSpellSlots, hasWellspringMagic } from '../../classes/class-archetypes.js';
 
 const MAGUS_STUDIOUS_ENTRY_FLAG = 'magusStudiousEntry';
 
@@ -211,7 +212,8 @@ export class CasterBaseHandler extends BaseClassHandler {
 
     const actorLevel = Number(actor.system?.details?.level?.value ?? 1);
     const remasteredMagus = classDef?.slug === 'magus' && isRemasteredMagus(actor, data.class);
-    const currentSlots = classDef?.spellcasting?.slots?.[actorLevel] ?? classDef?.spellcasting?.slots?.[1] ?? null;
+    const classSlots = classDef?.spellcasting?.slots?.[actorLevel] ?? classDef?.spellcasting?.slots?.[1] ?? null;
+    const currentSlots = classSlots && sc?.type === 'spontaneous' && hasWellspringMagic(actor) ? getWellspringSpellSlots(classSlots) : classSlots;
     let slotUpdate = null;
     if (currentSlots) {
       slotUpdate = this._buildPrimarySlotUpdate(entry, flexible ? getFlexibleSpellSlots(currentSlots, actorLevel) : currentSlots, classDef);

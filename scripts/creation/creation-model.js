@@ -1,5 +1,7 @@
 import { normalizeSkillSlug } from '../utils/skill-slugs.js';
 import { supportsFlexiblePreparation } from '../utils/flexible-spellcasting.js';
+import { ClassRegistry } from '../classes/registry.js';
+import { isClassArchetypeEligible } from '../classes/class-archetypes.js';
 
 const CURRENT_VERSION = 1;
 const HANDLER_SELECTION_KEYS = [
@@ -390,6 +392,13 @@ export function getClassArchetypeGrantedSkills(data) {
     .filter((skill) => typeof skill === 'string' && skill.length > 0);
 }
 
+// A subclass can rule out a class archetype, such as a divine bloodline ruling out Elemental Magic.
+function dropIneligibleClassArchetype(data, key, classEntry, subclass) {
+  const archetype = data[key];
+  if (!archetype || !classEntry?.slug) return;
+  if (!isClassArchetypeEligible(archetype, ClassRegistry.get(classEntry.slug) ?? classEntry, subclass)) data[key] = null;
+}
+
 export function setClassArchetype(data, item, target = 'primary') {
   const key = target === 'secondary' ? 'dualClassArchetype' : 'classArchetype';
   data[key] = item
@@ -398,6 +407,7 @@ export function setClassArchetype(data, item, target = 'primary') {
         name: item.name,
         img: item.img,
         slug: item.slug ?? null,
+        traits: Array.isArray(item.traits) ? [...item.traits] : [],
         grantedSkills: Array.isArray(item.grantedSkills) ? [...item.grantedSkills] : [],
       }
     : null;
@@ -618,6 +628,7 @@ export function setSubclass(
   syncPrimaryHandlerSelectionMirrors(data);
   data.spells = { cantrips: [], rank1: [] };
   data.curriculumSpells = { cantrips: [], rank1: [] };
+  dropIneligibleClassArchetype(data, 'classArchetype', data.class, data.subclass);
   return data;
 }
 
@@ -655,6 +666,7 @@ export function setDualSubclass(
   bucket.kineticImpulses = [];
   data.dualSpells = { cantrips: [], rank1: [] };
   data.dualCurriculumSpells = { cantrips: [], rank1: [] };
+  dropIneligibleClassArchetype(data, 'dualClassArchetype', data.dualClass, data.dualSubclass);
   return data;
 }
 
@@ -693,6 +705,7 @@ export function setSubclassChoice(data, flag, value, metadata = {}) {
   else delete data.subclass.choiceCurricula[flag];
   data.spells = { cantrips: [], rank1: [] };
   data.curriculumSpells = { cantrips: [], rank1: [] };
+  dropIneligibleClassArchetype(data, 'classArchetype', data.class, data.subclass);
   return data;
 }
 
@@ -705,6 +718,7 @@ export function setDualSubclassChoice(data, flag, value, metadata = {}) {
   else delete data.dualSubclass.choiceCurricula[flag];
   data.dualSpells = { cantrips: [], rank1: [] };
   data.dualCurriculumSpells = { cantrips: [], rank1: [] };
+  dropIneligibleClassArchetype(data, 'dualClassArchetype', data.dualClass, data.dualSubclass);
   return data;
 }
 

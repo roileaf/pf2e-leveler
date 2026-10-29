@@ -539,6 +539,39 @@ describe('applySpells', () => {
     ]));
   });
 
+  test('Wellspring Magic removes one slot of each rank from a repertoire caster', async () => {
+    const sorcererActor = {
+      items: [
+        { id: 'wellspring', type: 'feat', slug: 'wellspring-magic', system: { traits: { otherTags: ['class-archetype'] } } },
+        {
+          id: 'sorcerer-entry',
+          type: 'spellcastingEntry',
+          name: 'Sorcerer Spells',
+          system: {
+            tradition: { value: 'arcane' },
+            prepared: { value: 'spontaneous' },
+            ability: { value: 'cha' },
+          },
+        },
+      ],
+      system: { resources: { focus: { max: 0, value: 0 } } },
+      createEmbeddedDocuments: jest.fn(async (_type, docs) => docs.map((doc, index) => ({ id: 'created-' + index, ...doc }))),
+      updateEmbeddedDocuments: jest.fn(async () => []),
+      update: jest.fn(async () => {}),
+    };
+    const fullSlots = SORCERER.spellcasting.slots[3];
+
+    await applySpells(sorcererActor, { classSlug: 'sorcerer', levels: { 3: {} } }, 3);
+
+    expect(sorcererActor.updateEmbeddedDocuments).toHaveBeenCalledWith('Item', expect.arrayContaining([
+      expect.objectContaining({
+        _id: 'sorcerer-entry',
+        'system.slots.slot1.max': fullSlots[1] - 1,
+        'system.slots.slot2.max': fullSlots[2] - 1,
+      }),
+    ]));
+  });
+
   test('Battle Creed cleric keeps only the two highest slot ranks', async () => {
     const clericActor = {
       items: [

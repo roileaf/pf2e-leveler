@@ -138,6 +138,9 @@ async function buildCasterSpellSection(wizard, { target, classEntry, subclassEnt
   let totalCantrips = Array.isArray(level1Slots.cantrips) ? level1Slots.cantrips[0] + level1Slots.cantrips[1] : (level1Slots.cantrips ?? 5);
   let totalRank1 = Array.isArray(level1Slots[1]) ? level1Slots[1][0] + level1Slots[1][1] : (level1Slots[1] ?? 2);
 
+  const classArchetype = target === 'secondary' ? wizard.data.dualClassArchetype : wizard.data.classArchetype;
+  if (classArchetype?.slug === 'wellspring-magic') totalCantrips = Math.max(0, totalCantrips - 1);
+
   const spellbookCounts = classHandler.getSpellbookCounts(sectionData, classDef);
   if (spellbookCounts) {
     totalCantrips = spellbookCounts.cantrips;
