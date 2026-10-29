@@ -116,9 +116,14 @@ export function matchFeat(parsed, buildState) {
   const heritageAliases = buildState.heritageAliases instanceof Set
     ? buildState.heritageAliases
     : new Set(buildState.heritageAliases ?? []);
+  // "Seneschal witch" names the Seneschal class feature on a witch.
+  const classQualifiedSlugs = [...classSlugs]
+    .filter((classSlug) => parsed.slug?.endsWith(`-${classSlug}`))
+    .map((classSlug) => parsed.slug.slice(0, -(classSlug.length + 1)));
   const met =
     !!buildState.feats?.has(parsed.slug) ||
     !!buildState.classFeatures?.has(parsed.slug) ||
+    classQualifiedSlugs.some((featureSlug) => buildState.classFeatures?.has(featureSlug) || buildState.feats?.has(featureSlug)) ||
     classSlugs.has(slug) ||
     ancestryTraits.has(slug) ||
     heritageAliases.has(slug);

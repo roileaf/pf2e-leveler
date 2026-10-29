@@ -242,6 +242,21 @@ describe('matchFeat', () => {
     );
     expect(result.met).toBe(true);
   });
+
+  test('met when a class-qualified name matches a class feature of that class', () => {
+    const parsed = { type: 'feat', slug: 'seneschal-witch', text: 'seneschal witch' };
+
+    expect(matchFeat(parsed, {
+      class: { slug: 'witch' },
+      feats: new Set(),
+      classFeatures: new Set(['seneschal']),
+    }).met).toBe(true);
+    expect(matchFeat(parsed, {
+      class: { slug: 'wizard' },
+      feats: new Set(),
+      classFeatures: new Set(['seneschal']),
+    }).met).toBe(false);
+  });
 });
 
 describe('matchImplementCapability', () => {
