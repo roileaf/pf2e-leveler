@@ -1,5 +1,5 @@
 import { getClassHandler } from './class-handlers/registry.js';
-import { getClassSelectionData, getGrantedFeatChoiceValues } from './creation-model.js';
+import { getClassArchetypeGrantedSkills, getClassSelectionData, getGrantedFeatChoiceValues } from './creation-model.js';
 import { ClassRegistry } from '../classes/registry.js';
 import { anyClassGrantsDeitySkill } from '../classes/deity-skill.js';
 import { ATTRIBUTES, MODULE_ID, MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID } from '../constants.js';
@@ -42,6 +42,9 @@ export async function applyCreation(actor, data, onProgress = null) {
   if (data.dualSubclass && dualHandler.shouldApplySubclassItem(dualClassData) !== false) {
     await applyItem(actor, data.dualSubclass, 'subclass', getStoredChoiceSelections(data, data.dualSubclass.uuid));
   }
+  for (const classArchetype of [data.classArchetype, data.dualClassArchetype].filter((entry) => entry?.uuid)) {
+    await applyItem(actor, classArchetype, 'class archetype', getStoredChoiceSelections(data, classArchetype.uuid));
+  }
   reportProgress(0.28, 'Waiting for the PF2E system to finish initializing items...');
   await waitForSystem();
 
@@ -50,9 +53,10 @@ export async function applyCreation(actor, data, onProgress = null) {
   await applyLanguages(actor, data);
   await applyDeitySkill(actor, data);
 
-  if (data.skills.length > 0) {
+  const trainedSkills = [...new Set([...data.skills, ...getClassArchetypeGrantedSkills(data)])];
+  if (trainedSkills.length > 0) {
     const updates = {};
-    for (const skill of data.skills) {
+    for (const skill of trainedSkills) {
       updates[`system.skills.${skill}.rank`] = 1;
     }
     await actor.update(updates);
@@ -97,6 +101,8 @@ async function applyCreationFeatGrants(actor, data) {
   if (data.dualClass?.uuid) sourceUuids.add(data.dualClass.uuid);
   if (data.subclass?.uuid) sourceUuids.add(data.subclass.uuid);
   if (data.dualSubclass?.uuid) sourceUuids.add(data.dualSubclass.uuid);
+  if (data.classArchetype?.uuid) sourceUuids.add(data.classArchetype.uuid);
+  if (data.dualClassArchetype?.uuid) sourceUuids.add(data.dualClassArchetype.uuid);
   for (const entry of getClassSelectionSourceEntries(data, 'class')) sourceUuids.add(entry.uuid);
   for (const entry of getClassSelectionSourceEntries(data, 'dualClass')) sourceUuids.add(entry.uuid);
   for (const entry of getSelectedChoiceSourceEntries(data)) sourceUuids.add(entry.uuid);

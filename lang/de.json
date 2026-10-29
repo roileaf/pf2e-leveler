@@ -266,6 +266,8 @@
     },
     "CREATION": {
       "FLEXIBLE_PREPARATION": "Flexible Zaubervorbereitung",
+      "CLASS_ARCHETYPE_HINT": "Optionaler Klassenarchetyp, auf Stufe 1 gewählt. Er ändert deine Klassenmerkmale der 1. Stufe und erfordert seine Widmung als Klassentalent der 2. Stufe.",
+
       "FLEXIBLE_PREPARATION_HINT": "Auf Stufe 1 wählen. Bereite eine Zaubersammlung vor und wirke ihre Zauber flexibel, mit weniger Zauberplätzen und Zaubertricks. Erfordert Flexible Spellcaster Dedication als Klassentalent auf Stufe 2. Das Erlernen von Zaubern im Zauberbuch bleibt unverändert.",
       "TITLE": "Charaktererschaffung",
       "LOADING": "Daten der Charaktererschaffung werden geladen …",

@@ -11,7 +11,7 @@ import { getBuildStateAncestryFeatTraits } from '../../utils/ancestry-feat-trait
 import { registerHandlebarsHelpers } from '../../hooks/lifecycle.js';
 import { getClassHandler } from '../../creation/class-handlers/registry.js';
 import { isAncestralParagonEnabled, isDualClassEnabled, isMythicEnabled, slugify } from '../../utils/pf2e-api.js';
-import { setMythicCalling } from '../../creation/creation-model.js';
+import { getClassArchetypeGrantedSkills, setMythicCalling } from '../../creation/creation-model.js';
 import { normalizeSkillSlug } from '../../utils/skill-slugs.js';
 import { inferSf2eSpellcastingTraditionFromItem } from '../../utils/sf2e-spellcasting.js';
 import { captureScrollState, restoreScrollState } from '../shared/scroll-state.js';
@@ -24,7 +24,7 @@ import { buildSummaryContext } from './summary.js';
 import { buildLanguageContext, buildSelectedLoreSkillContext, buildSkillContext, collectWizardDeitySkillMap, collectFeatLanguageGrants, getBackgroundLores, getBackgroundTrainedSkills, getLanguageMap, getActiveSkillSlugs, getSelectedSubclassChoiceSkillMap, getActiveSkillConfigEntry, normalizeLoreSkillName, parseSubclassLores } from './skills-languages.js';
 import { activateCharacterWizardListeners } from './listeners.js';
 import { buildFlexiblePreparationOptions, buildSpellContext, getSanitizedCurriculumSelections, limitCurriculumSelections, resolveFocusSpells, resolveGrantedSpells, resolveSummaryCurriculumSpells, resolveSummaryFocusSpells } from './spells.js';
-import { loadCommanderTactics, loadCompendium, loadCompendiumCategory, loadAncestries, loadBackgrounds, loadClasses, loadDeities, loadExemplarIkons, loadHeritages, loadInventorArmorModifications, loadInventorArmorOptions, loadInventorWeaponModifications, loadInventorWeaponOptions, loadKineticImpulses, loadRawHeritages, loadSubclasses, loadSubclassesForClass, loadTaggedClassFeatures, loadThaumaturgeImplements, loadTheses, parseCurriculum, parseSpellUuidsFromDescription, parseVesselSpell, resolveClassSubclassTag } from './loaders.js';
+import { loadCommanderTactics, loadCompendium, loadCompendiumCategory, loadAncestries, loadBackgrounds, loadClasses, loadDeities, loadExemplarIkons, loadHeritages, loadInventorArmorModifications, loadInventorArmorOptions, loadInventorWeaponModifications, loadInventorWeaponOptions, loadKineticImpulses, loadOptionalClassArchetypes, loadRawHeritages, loadSubclasses, loadSubclassesForClass, loadTaggedClassFeatures, loadThaumaturgeImplements, loadTheses, parseCurriculum, parseSpellUuidsFromDescription, parseVesselSpell, resolveClassSubclassTag } from './loaders.js';
 import { promptReviewRequest, isReviewFeatureActive, isApplyBlockedForActor } from '../../access/review-requests.js';
 import { annotateGuidance, annotateGuidanceBySlug, filterDisallowedForCurrentUser, sortByGuidancePriority } from '../../access/content-guidance.js';
 import { filterPublicationsForCurrentUser } from '../../access/source-classification.js';
@@ -471,6 +471,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
       canApplyCreation,
       browserStep,
       flexiblePreparationOptions: this.stepId === 'class' ? buildFlexiblePreparationOptions(this.data) : [],
+      classArchetypeOptions: this.stepId === 'class' ? await this._buildClassArchetypeOptions() : [],
       rarityFilters,
       publicationOptions,
       publicationFilter,
@@ -1179,7 +1180,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const senses = await this._collectSenses();
     const [classSkillsForState, bgSkillsForState, deitySkills] = await Promise.all([this._getClassTrainedSkills(target), this._getBackgroundTrainedSkills(), collectWizardDeitySkillMap(this)]);
-    const allTrainedSkills = [...classSkillsForState, ...bgSkillsForState, ...(subclassEntry?.grantedSkills ?? []), ...deitySkills.keys(), ...(this.data.ancestryFeat?.grantedSkills ?? []), ...(this.data.ancestryParagonFeat?.grantedSkills ?? []), ...(this.data.classFeat?.grantedSkills ?? []), ...(this.data.dualClassFeat?.grantedSkills ?? []), ...(this.data.skillFeat?.grantedSkills ?? []), ...(this.data.mythicCalling?.grantedSkills ?? []), ...this.data.skills];
+    const allTrainedSkills = [...classSkillsForState, ...bgSkillsForState, ...(subclassEntry?.grantedSkills ?? []), ...getClassArchetypeGrantedSkills(this.data), ...deitySkills.keys(), ...(this.data.ancestryFeat?.grantedSkills ?? []), ...(this.data.ancestryParagonFeat?.grantedSkills ?? []), ...(this.data.classFeat?.grantedSkills ?? []), ...(this.data.dualClassFeat?.grantedSkills ?? []), ...(this.data.skillFeat?.grantedSkills ?? []), ...(this.data.mythicCalling?.grantedSkills ?? []), ...this.data.skills];
     const skillsMap = Object.fromEntries(allTrainedSkills.map((s) => [s, 1]));
     const attributes = await this._buildCreationAbilityModifiers();
     const level = Number(this.actor?.system?.details?.level?.value ?? 1) || 1;
@@ -1916,7 +1917,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     const resolvedClassItems = Array.isArray(classItems) ? classItems.filter(Boolean) : [classItems ?? (this.data.class?.uuid ? await this._getCachedDocument(this.data.class.uuid) : null), this.data.dualClass?.uuid ? await this._getCachedDocument(this.data.dualClass.uuid) : null].filter(Boolean);
 
     const deitySkills = await collectWizardDeitySkillMap(this);
-    const autoTrainedSkills = new Set([...resolvedClassItems.flatMap((item) => (item.system?.trainedSkills?.value ?? []).filter((s) => typeof s === 'string' && s.length > 0)), ...(this.data.subclass?.grantedSkills ?? []).filter((s) => typeof s === 'string' && s.length > 0), ...(this.data.dualSubclass?.grantedSkills ?? []).filter((s) => typeof s === 'string' && s.length > 0), ...getSelectedSubclassChoiceSkillMap(this.data).keys(), ...deitySkills.keys()]);
+    const autoTrainedSkills = new Set([...resolvedClassItems.flatMap((item) => (item.system?.trainedSkills?.value ?? []).filter((s) => typeof s === 'string' && s.length > 0)), ...(this.data.subclass?.grantedSkills ?? []).filter((s) => typeof s === 'string' && s.length > 0), ...(this.data.dualSubclass?.grantedSkills ?? []).filter((s) => typeof s === 'string' && s.length > 0), ...getSelectedSubclassChoiceSkillMap(this.data).keys(), ...getClassArchetypeGrantedSkills(this.data), ...deitySkills.keys()]);
     if (autoTrainedSkills.size === 0) return 0;
 
     const backgroundSkills = await this._getBackgroundTrainedSkills();
@@ -2373,6 +2374,26 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _loadSubclassesForClass(classEntry) {
     return loadSubclassesForClass(this, classEntry);
+  }
+
+  async _loadOptionalClassArchetypes(classEntry) {
+    return loadOptionalClassArchetypes(this, classEntry);
+  }
+
+  async _buildClassArchetypeOptions() {
+    const targets = [
+      { target: 'primary', classEntry: this.data.class, selected: this.data.classArchetype },
+      { target: 'secondary', classEntry: this.data.dualClass, selected: this.data.dualClassArchetype },
+    ].filter(({ classEntry }) => !!classEntry?.slug);
+    const groups = await Promise.all(targets.map(async ({ target, classEntry, selected }) =>
+      (await this._loadOptionalClassArchetypes(classEntry)).map((option) => ({
+        target,
+        className: classEntry.name,
+        uuid: option.uuid,
+        name: option.name,
+        selected: selected?.uuid === option.uuid,
+      }))));
+    return groups.flat();
   }
 
   async _loadTheses(classEntry = this.data.class) {

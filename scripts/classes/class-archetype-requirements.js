@@ -19,6 +19,21 @@ export function getSelectedSubclassItem(actor, classSlug = actor?.class?.slug ??
   return matched;
 }
 
+// Class archetypes like Warrior of Legend sit beside the subclass instead of being one.
+function getUntaggedClassArchetypeItems(actor, classSlug) {
+  const subclassTag = SUBCLASS_TAGS[classSlug];
+  if (!actor || !classSlug) return [];
+  const actorItems = actor?.items?.contents
+    ?? (Array.isArray(actor?.items) ? actor.items : actor?.items?.filter?.(() => true) ?? []);
+  return actorItems.filter((item) => {
+    const otherTags = item?.system?.traits?.otherTags ?? [];
+    return item?.type === 'feat'
+      && otherTags.includes('class-archetype')
+      && (item.system?.traits?.value ?? []).includes(classSlug)
+      && !(subclassTag && matchesTagFamily(otherTags, subclassTag));
+  });
+}
+
 export function parseRequiredSecondLevelClassFeat(value) {
   const html = String(value ?? '');
   if (!html) return null;
@@ -61,8 +76,8 @@ export function getRequiredSecondLevelClassFeatForActor(actor, classSlug = actor
       };
     }
   }
-  const subclassItem = getSelectedSubclassItem(actor, classSlug);
-  const requirementSources = extractRequirementSourceStrings(subclassItem);
+  const requirementSources = [getSelectedSubclassItem(actor, classSlug), ...getUntaggedClassArchetypeItems(actor, classSlug)]
+    .flatMap((item) => extractRequirementSourceStrings(item));
   const requirement = requirementSources
     .map((value) => parseRequiredSecondLevelClassFeat(value))
     .find(Boolean) ?? null;

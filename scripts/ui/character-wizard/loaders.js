@@ -360,6 +360,35 @@ export async function loadSubclassesForClass(wizard, classEntry) {
   });
 }
 
+// Class archetypes such as Warrior of Legend or Seneschal are not tagged as a subclass,
+// so the class's own subclass choice never offers them.
+export async function loadOptionalClassArchetypes(wizard, classEntry) {
+  const classSlug = classEntry?.slug;
+  if (!classSlug) return [];
+  const cacheKey = `optional-class-archetypes-${classSlug}`;
+  if (wizard._compendiumCache[cacheKey]) return wizard._compendiumCache[cacheKey];
+
+  const subclassTag = classEntry.subclassTag ?? SUBCLASS_TAGS[classSlug] ?? null;
+  const docs = await loadCompendiumCategory(wizard, 'classFeatures');
+  const items = await Promise.all(docs
+    .filter((d) => (d.otherTags ?? []).includes('class-archetype'))
+    .filter((d) => (d.traits ?? []).includes(classSlug))
+    .filter((d) => !subclassTag || !(d.otherTags ?? []).includes(subclassTag))
+    .map(async (d) => {
+      const source = await wizard._getCachedDocument(d.uuid);
+      return {
+        uuid: d.uuid,
+        name: d.name,
+        img: d.img,
+        slug: d.slug ?? null,
+        grantedSkills: wizard._parseGrantedSkills(source?.system?.rules ?? [], source?.system?.description?.value ?? ''),
+      };
+    }));
+  items.sort((a, b) => a.name.localeCompare(b.name));
+  wizard._compendiumCache[cacheKey] = items;
+  return items;
+}
+
 export async function resolveClassSubclassTag(wizard, classItem) {
   const explicitTag = classItem?.subclassTag ?? SUBCLASS_TAGS[classItem?.slug];
   if (typeof explicitTag === 'string' && explicitTag.length > 0) return explicitTag;

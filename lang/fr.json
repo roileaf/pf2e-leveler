@@ -221,6 +221,8 @@
     },
     "CREATION": {
       "FLEXIBLE_PREPARATION": "Préparation flexible des sorts",
+      "CLASS_ARCHETYPE_HINT": "Archétype de classe facultatif, choisi au niveau 1. Il modifie vos capacités de classe de niveau 1 et exige son dévouement comme don de classe de niveau 2.",
+
       "FLEXIBLE_PREPARATION_HINT": "À choisir au niveau 1. Préparez une collection de sorts à lancer librement, avec moins d'emplacements et de tours de magie. Flexible Spellcaster Dedication est requis comme don de classe au niveau 2. L'apprentissage des sorts du grimoire reste inchangé.",
       "TITLE": "Creation de personnage",
       "BUTTON": "Creer le personnage",

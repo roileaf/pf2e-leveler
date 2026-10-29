@@ -1,7 +1,7 @@
 import { getAdditionalSelectedFormulas, getAdditionalSelectedItems, getAdditionalSelectedSkills } from '../../../scripts/creation/apply-creation.js';
 import { applyCreation, applyItem, applyLores } from '../../../scripts/creation/apply-creation.js';
 import { MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID, MODULE_ID, WEALTH_MODES } from '../../../scripts/constants.js';
-import { createCreationData, setMythicCalling } from '../../../scripts/creation/creation-model.js';
+import { createCreationData, setClassArchetype, setMythicCalling } from '../../../scripts/creation/creation-model.js';
 
 jest.mock('../../../scripts/creation/class-handlers/registry.js', () => ({
   getClassHandler: jest.fn(() => ({
@@ -110,6 +110,36 @@ describe('applyCreation Mythic Calling', () => {
     expect(getAdditionalSelectedSkills(data)).toEqual([]);
     expect(getAdditionalSelectedItems(data)).toEqual([]);
     expect(getAdditionalSelectedFormulas(data)).toEqual([]);
+  });
+});
+
+describe('applyCreation class archetype', () => {
+  it('adds the chosen class archetype and trains the skills it grants', async () => {
+    game.settings.get = jest.fn(() => false);
+    const actor = createMockActor({ items: [] });
+    actor.createEmbeddedDocuments = jest.fn(async (_type, docs) => docs.map((doc, index) => ({ ...doc, id: `created-${index}` })));
+    actor.update = jest.fn(async () => {});
+    actor.testUserPermission = jest.fn(() => true);
+    game.users = [{ isGM: true, id: 'gm-user' }];
+    ChatMessage.create = jest.fn(async () => {});
+    global.fromUuid = jest.fn(async (uuid) => uuid === 'warrior-of-legend-uuid' ? {
+      uuid,
+      name: 'Warrior of Legend',
+      toObject: () => ({ name: 'Warrior of Legend', type: 'feat', system: { rules: [], description: { value: '' } } }),
+    } : null);
+    const data = createCreationData();
+    setClassArchetype(data, { uuid: 'warrior-of-legend-uuid', name: 'Warrior of Legend', grantedSkills: ['acrobatics', 'athletics'] });
+    data.skills = ['athletics', 'stealth'];
+
+    await applyCreation(actor, data);
+
+    const created = actor.createEmbeddedDocuments.mock.calls.flatMap(([, docs]) => docs);
+    expect(created).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Warrior of Legend' })]));
+    expect(actor.update).toHaveBeenCalledWith({
+      'system.skills.athletics.rank': 1,
+      'system.skills.stealth.rank': 1,
+      'system.skills.acrobatics.rank': 1,
+    });
   });
 });
 

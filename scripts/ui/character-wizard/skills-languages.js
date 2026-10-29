@@ -1,6 +1,6 @@
 import { SKILLS } from '../../constants.js';
 import { anyClassGrantsDeitySkill } from '../../classes/deity-skill.js';
-import { getClassSelectionData, getGrantedFeatChoiceValues } from '../../creation/creation-model.js';
+import { getClassArchetypeGrantedSkills, getClassSelectionData, getGrantedFeatChoiceValues } from '../../creation/creation-model.js';
 import {
   getCampaignLanguages,
   getRulesetConfig,
@@ -270,6 +270,7 @@ export async function buildSkillContext(wizard) {
     ...(Array.isArray(wizard.data.dualSubclass?.grantedSkills) ? wizard.data.dualSubclass.grantedSkills : []),
     ...selectedSubclassChoiceSkills.keys(),
   ];
+  const classArchetypeSkills = getClassArchetypeGrantedSkills(wizard.data);
   const heritageGrantedSkills = Array.isArray(wizard.data.heritage?.grantedSkills)
     ? wizard.data.heritage.grantedSkills
     : [];
@@ -289,12 +290,13 @@ export async function buildSkillContext(wizard) {
     const fromClass = classSkills.includes(slug);
     const fromBg = bgSkills.includes(slug);
     const fromSubclass = subclassSkills.includes(slug);
+    const fromClassArchetype = classArchetypeSkills.includes(slug);
     const fromHeritage = heritageGrantedSkills.includes(slug);
     const fromDeity = deitySkills.has(slug);
     const fromFeatGrant = featGrantedSkills.includes(slug);
     const featChoice = featChoiceSkillMap.get(slug) ?? null;
     const fromFeatChoices = !!featChoice;
-    const autoTrained = fromClass || fromBg || fromSubclass || fromHeritage || fromDeity || fromFeatGrant || fromFeatChoices;
+    const autoTrained = fromClass || fromBg || fromSubclass || fromClassArchetype || fromHeritage || fromDeity || fromFeatGrant || fromFeatChoices;
     const source = fromClass
       ? localizeWithFallback('CREATION.AUTO_TRAINED_CLASS', 'Class')
       : fromBg
@@ -304,6 +306,8 @@ export async function buildSkillContext(wizard) {
             ?? (wizard.data.subclass?.grantedSkills?.includes(slug)
               ? wizard.data.subclass.name
               : wizard.data.dualSubclass?.name))
+          : fromClassArchetype
+            ? [wizard.data.classArchetype, wizard.data.dualClassArchetype].find((entry) => entry?.grantedSkills?.includes(slug))?.name ?? null
           : fromHeritage
             ? wizard.data.heritage?.name ?? null
           : fromDeity

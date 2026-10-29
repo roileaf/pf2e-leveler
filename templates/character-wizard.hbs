@@ -224,6 +224,15 @@
           <p>{{localize "PF2E_LEVELER.CREATION.FLEXIBLE_PREPARATION_HINT"}}</p>
         </div>
         {{/each}}
+        {{#each classArchetypeOptions}}
+        <div class="wizard-feat-slot-card">
+          <label class="wizard-feat-slot-card__label">
+            <input type="checkbox" data-action="setClassArchetype" data-target="{{this.target}}" data-uuid="{{this.uuid}}" {{#if this.selected}}checked{{/if}}>
+            {{this.className}}: {{this.name}}
+          </label>
+          <p>{{localize "PF2E_LEVELER.CREATION.CLASS_ARCHETYPE_HINT"}}</p>
+        </div>
+        {{/each}}
         <div class="wizard-browser__results-header">
           <div class="wizard-browser__eyebrow">{{browserStep.resultsLabel}}</div>
           <div class="wizard-browser__count">{{browserStep.items.length}}</div>

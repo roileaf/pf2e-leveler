@@ -400,6 +400,7 @@
         },
         "CREATION": {
             "FLEXIBLE_PREPARATION": "灵活法术准备",
+            "CLASS_ARCHETYPE_HINT": "可选的职业变体，在1级选择。它会改变你的1级职业能力，并要求以其专长作为2级职业专长。",
             "FLEXIBLE_PREPARATION_HINT": "在1级选择。准备法术集合并灵活施放其中的法术，但法术位和戏法数量减少。必须在2级选择Flexible Spellcaster Dedication作为职业专长。法术书学习数量不变。",
             "TITLE": "角色创建",
             "LOADING": "角色构筑器数据加载中…",

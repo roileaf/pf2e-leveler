@@ -184,6 +184,8 @@ export function createCreationData() {
     dualClass: null,
     flexiblePreparation: false,
     dualFlexiblePreparation: false,
+    classArchetype: null,
+    dualClassArchetype: null,
     subclass: null,
     dualSubclass: null,
     classSelections: {
@@ -329,6 +331,8 @@ export function setClass(data, item) {
   data.dualClass = null;
   data.flexiblePreparation = false;
   data.dualFlexiblePreparation = false;
+  data.classArchetype = null;
+  data.dualClassArchetype = null;
   data.subclass = null;
   data.dualSubclass = null;
   resetHandlerSelections(data, 'class');
@@ -349,6 +353,7 @@ export function setClass(data, item) {
 
 export function setDualClass(data, item) {
   data.dualFlexiblePreparation = false;
+  data.dualClassArchetype = null;
   data.dualClass = item
     ? {
         uuid: item.uuid,
@@ -376,6 +381,26 @@ export function setFlexiblePreparation(data, enabled, target = 'primary') {
   const classEntry = secondary ? data.dualClass : data.class;
   const key = secondary ? 'dualFlexiblePreparation' : 'flexiblePreparation';
   data[key] = enabled === true && supportsFlexiblePreparation(classEntry?.slug);
+  return data;
+}
+
+export function getClassArchetypeGrantedSkills(data) {
+  return [data?.classArchetype, data?.dualClassArchetype]
+    .flatMap((entry) => entry?.grantedSkills ?? [])
+    .filter((skill) => typeof skill === 'string' && skill.length > 0);
+}
+
+export function setClassArchetype(data, item, target = 'primary') {
+  const key = target === 'secondary' ? 'dualClassArchetype' : 'classArchetype';
+  data[key] = item
+    ? {
+        uuid: item.uuid,
+        name: item.name,
+        img: item.img,
+        slug: item.slug ?? null,
+        grantedSkills: Array.isArray(item.grantedSkills) ? [...item.grantedSkills] : [],
+      }
+    : null;
   return data;
 }
 

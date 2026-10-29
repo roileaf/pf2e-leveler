@@ -13,6 +13,7 @@ import {
   setClass,
   setDualClass,
   setFlexiblePreparation,
+  setClassArchetype,
   setClassFeat,
   setDualClassFeat,
   setDeity,
@@ -48,6 +49,15 @@ export function activateCharacterWizardListeners(wizard, el) {
   el.querySelectorAll('[data-action="setFlexiblePreparation"]').forEach((input) => {
     input.addEventListener('change', () => {
       setFlexiblePreparation(wizard.data, input.checked, input.dataset.target);
+      wizard._saveAndRender();
+    });
+  });
+  el.querySelectorAll('[data-action="setClassArchetype"]').forEach((input) => {
+    input.addEventListener('change', async () => {
+      const classEntry = input.dataset.target === 'secondary' ? wizard.data.dualClass : wizard.data.class;
+      const options = await wizard._loadOptionalClassArchetypes(classEntry);
+      const item = input.checked ? options.find((option) => option.uuid === input.dataset.uuid) ?? null : null;
+      setClassArchetype(wizard.data, item, input.dataset.target);
       wizard._saveAndRender();
     });
   });
