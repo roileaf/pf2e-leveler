@@ -1,3 +1,9 @@
+## 3.12.12
+
+### Added
+
+- **Wellspring Magic and Elemental Magic** - These class archetypes can now be picked on the creation wizard's class step. Wellspring Magic is offered to spontaneous casters and applies its reduced spell slots (one fewer per rank and one fewer cantrip, with the repertoire unchanged). Elemental Magic is offered to arcane and primal casters (not yet wizards); for sorcerers, witches and other classes whose tradition depends on the subclass, it is removed if the chosen subclass isn't arcane or primal. The level planner requires the matching dedication as the 2nd-level class feat
+
 ## 3.12.11
 
 ### Added
