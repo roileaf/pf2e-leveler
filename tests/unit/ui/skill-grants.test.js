@@ -1553,6 +1553,33 @@ describe('CharacterWizard skills step grants', () => {
     ]);
   });
 
+  it('prefers structured background lore over a differently spelled description lore', async () => {
+    global.fromUuid = jest.fn(async (uuid) => {
+      if (uuid === 'background-gladiator-uuid') {
+        return {
+          system: {
+            trainedSkills: {
+              value: ['performance'],
+              lore: ['Gladatorial Lore'],
+            },
+            description: {
+              value: "<p>You're trained in the Performance skill and the Gladiatorial Lore skill.</p>",
+            },
+          },
+        };
+      }
+
+      return null;
+    });
+
+    const wizard = new CharacterWizard(createMockActor());
+    wizard.data.background = { uuid: 'background-gladiator-uuid', name: 'Gladiator' };
+
+    await expect(wizard._getBackgroundLores()).resolves.toEqual([
+      { name: 'Gladatorial Lore', source: 'Background' },
+    ]);
+  });
+
   it('extracts background lore skills from ActiveEffectLike skill rank rules', async () => {
     global.fromUuid = jest.fn(async (uuid) => {
       if (uuid === 'background-noble-uuid') {

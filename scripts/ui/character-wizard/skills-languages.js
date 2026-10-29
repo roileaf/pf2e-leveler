@@ -216,9 +216,11 @@ export async function getBackgroundLores(wizard) {
   const staticLores = selectedDescriptionLores.length > 0
     ? []
     : (item.system?.trainedSkills?.lore ?? []);
+  // Description parsing is a fallback; when trainedSkills.lore is set it is authoritative
+  // (Gladiator's data says "Gladatorial Lore" while its text says "Gladiatorial Lore").
   const descriptionLores = dynamicLore || selectedDescriptionLores.length > 0 || choiceContext.hasChoiceSets
     ? selectedDescriptionLores
-    : parseSubclassLores([], item.system?.description?.value ?? '');
+    : staticLores.length > 0 ? [] : parseSubclassLores([], item.system?.description?.value ?? '');
   const loreNames = [
     ...staticLores,
     ...parseSubclassLores(filterBackgroundGrantRules(item.system?.rules ?? [], choiceContext), ''),
