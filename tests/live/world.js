@@ -1033,6 +1033,69 @@ export async function wizardWarriorOfLegendAudit(data) {
   };
 }
 
+export async function wizardClasslessArchetypeAudit(data) {
+  const actor = ownedActor(data);
+  const wizard = await openWizardFor(data);
+  await selectCoreCreation(wizard);
+  const optionNamesFor = async (classSlug) => {
+    if ((await selectClass(wizard, classSlug)) !== classSlug) throw Error(`${classSlug} class missing from catalog`);
+    await clickWizardStep(wizard, 'class');
+    return (await wizard._buildClassArchetypeOptions()).map((option) => option.name);
+  };
+  const offered = {
+    sorcerer: await optionNamesFor('sorcerer'),
+    druid: await optionNamesFor('druid'),
+    wizard: await optionNamesFor('wizard'),
+  };
+
+  const sorcerer = await selectClass(wizard, 'sorcerer');
+  if (sorcerer !== 'sorcerer') throw Error('Sorcerer class missing from catalog');
+  const wellspring = (await wizard._loadOptionalClassArchetypes(wizard.data.class))
+    .find((option) => option.slug === 'wellspring-magic');
+  if (!wellspring) throw Error('Wellspring Magic was not offered to a sorcerer');
+
+  const beforeMessages = new Set(game.messages.keys());
+  const { applyCreation } = await import('/modules/pf2e-leveler/scripts/creation/apply-creation.js');
+  try {
+    await applyCreation(actor, {
+      ancestry: null,
+      heritage: null,
+      background: null,
+      class: null,
+      dualClass: null,
+      subclass: null,
+      dualSubclass: null,
+      classArchetype: wellspring,
+      boosts: { free: [] },
+      languages: [],
+      skills: [],
+      lores: [],
+      ancestryFeat: null,
+      ancestryParagonFeat: null,
+      classFeat: null,
+      dualClassFeat: null,
+      skillFeat: null,
+      grantedFeatSections: [],
+      grantedFeatChoices: {},
+      featGrants: [],
+      permanentItems: [],
+      equipment: [],
+      spells: { cantrips: [], rank1: [] },
+    });
+  } finally {
+    await markNewMessages(data.runId, beforeMessages);
+  }
+
+  const { getRequiredSecondLevelClassFeatForActor } = await import('/modules/pf2e-leveler/scripts/classes/class-archetype-requirements.js');
+  return {
+    sorcererOffered: offered.sorcerer.includes('Wellspring Magic') && offered.sorcerer.includes('Elemental Magic'),
+    druidOffered: offered.druid.includes('Elemental Magic') && !offered.druid.includes('Wellspring Magic'),
+    wizardOffered: !offered.wizard.includes('Elemental Magic') && !offered.wizard.includes('Wellspring Magic'),
+    itemApplied: actor.items.some((item) => item.sourceId === wellspring.uuid),
+    dedicationRequiredAtLevel2: getRequiredSecondLevelClassFeatForActor(actor, 'sorcerer')?.slug === 'wellspring-mage-dedication',
+  };
+}
+
 export async function wizardGladiatorLoreAudit(data) {
   const wizard = await openWizardFor(data);
   await clickWizardStep(wizard, 'background');

@@ -386,6 +386,25 @@ export const issueRegressionCases = [
     ],
   },
   {
+    name: 'creation-classless-class-archetypes',
+    area: 'issues',
+    profiles: ['foundry14-pf2e', 'foundry14-pf2e-sf2e-anachronism'],
+    fixture: true,
+    steps: [
+      {
+        session: 'gm',
+        operation: 'wizardClasslessArchetypeAudit',
+        expect: {
+          sorcererOffered: true,
+          druidOffered: true,
+          wizardOffered: true,
+          itemApplied: true,
+          dedicationRequiredAtLevel2: true,
+        },
+      },
+    ],
+  },
+  {
     name: 'creation-gladiator-single-lore',
     area: 'issues',
     profiles: ['foundry14-pf2e', 'foundry14-pf2e-sf2e-anachronism'],
