@@ -1,3 +1,14 @@
+## 3.12.11
+
+### Added
+
+- **Optional class archetypes** - Class archetypes that are not subclasses, such as Warrior of Legend (fighter) and Seneschal (witch), can now be picked on the creation wizard's class step. The class feature is added to the character, Warrior of Legend's Acrobatics and Athletics training is applied, and the level planner requires the matching dedication as the 2nd-level class feat
+
+### Fixed
+
+- **Gladiator lore** - The Gladiator background no longer grants its lore twice
+- **Seneschal Witch Dedication** - The "seneschal witch" prerequisite is now met by a witch with the Seneschal class feature
+
 ## 3.12.10
 
 ### Fixed
