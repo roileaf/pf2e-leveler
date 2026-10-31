@@ -2341,6 +2341,8 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         selectedRarities: ['common', 'uncommon', 'rare', 'unique'],
         maxLevel: '',
         levelOptionCap: this.selectedLevel,
+        // The granting feat already fixes these options; Multitalented even waives the dedication lock.
+        ignoreDedicationLock: true,
       },
       title: pickerConfig.title,
     });
@@ -2410,6 +2412,8 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         selectedRarities: ['common', 'uncommon', 'rare', 'unique'],
         maxLevel: '',
         levelOptionCap: this.selectedLevel,
+        // The granting feat already fixes these options; Multitalented even waives the dedication lock.
+        ignoreDedicationLock: true,
       },
       title: pickerConfig.title,
     });

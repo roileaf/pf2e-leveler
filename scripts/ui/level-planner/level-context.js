@@ -1778,11 +1778,16 @@ function inferChoiceSetSpellRank(choiceSet) {
 }
 
 function inferChoiceSetFeatCategory(choiceSet, options) {
-  const text = `${choiceSet?.flag ?? ''} ${choiceSet?.prompt ?? ''}`.toLowerCase();
-  if (text.includes('ancestry')) return 'ancestry';
-  if (text.includes('class')) return 'class';
-  if (text.includes('skill')) return 'skill';
-  if (text.includes('archetype')) return 'archetype';
+  // Split raw keys like "Prompt.LevelOneAncestryFeat" into words, then match whole words only:
+  // a "multiclass dedication" choice is not a class feat.
+  const text = `${choiceSet?.flag ?? ''} ${choiceSet?.prompt ?? ''}`
+    .replace(/([a-z])([A-Z])/gu, '$1 $2')
+    .replace(/[._-]/gu, ' ')
+    .toLowerCase();
+  if (/\bancestry\b/u.test(text)) return 'ancestry';
+  if (/\bclass\b/u.test(text)) return 'class';
+  if (/\bskill\b/u.test(text)) return 'skill';
+  if (/\barchetype\b/u.test(text)) return 'archetype';
   const traits = options.flatMap((option) => option.traits ?? []).map((trait) => String(trait).toLowerCase());
   if (traits.includes('ancestry')) return 'ancestry';
   if (traits.includes('skill')) return 'skill';
@@ -2470,11 +2475,6 @@ function serializeChoiceSetFilter(filter) {
   return String(JSON.stringify(filter ?? []) ?? '').toLowerCase();
 }
 
-function getPlannerDedicationArchetypeSlug(feat, source) {
-  const genericTraits = new Set(['archetype', 'dedication', 'class', 'multiclass', 'general', 'skill', 'mythic']);
-  const traits = [
-    ...(Array.isArray(feat?.traits) ? feat.traits : []),
-    ...(source?.system?.traits?.value ?? []),
 // Feats such as Advanced Devotion carry only the archetype trait and name the class in their
 // text instead: "You gain one champion feat."
 function getGrantedClassFeatSlug(source) {
@@ -2482,6 +2482,11 @@ function getGrantedClassFeatSlug(source) {
   return description.match(/\byou gain (?:one|a|an) ([a-z-]+) feat\b/u)?.[1] ?? null;
 }
 
+function getPlannerDedicationArchetypeSlug(feat, source) {
+  const genericTraits = new Set(['archetype', 'dedication', 'class', 'multiclass', 'general', 'skill', 'mythic']);
+  const traits = [
+    ...(Array.isArray(feat?.traits) ? feat.traits : []),
+    ...(source?.system?.traits?.value ?? []),
     ...(feat?.system?.traits?.value ?? []),
   ]
     .map((trait) => String(trait).toLowerCase())
