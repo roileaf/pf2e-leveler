@@ -386,6 +386,57 @@ export const issueRegressionCases = [
     ],
   },
   {
+    name: 'planner-multitalented-dedication',
+    area: 'issues',
+    profiles: ['foundry14-pf2e', 'foundry14-pf2e-sf2e-anachronism'],
+    fixture: 'planner',
+    steps: [
+      {
+        session: 'gm',
+        operation: 'plannerMultitalentedAudit',
+        expect: { choiceOffered: true, dedicationsSelectable: true, noDedicationLock: true },
+      },
+    ],
+  },
+  {
+    name: 'creation-runelord-skips-thesis',
+    area: 'issues',
+    profiles: ['foundry14-pf2e', 'foundry14-pf2e-sf2e-anachronism'],
+    fixture: true,
+    steps: [
+      {
+        session: 'gm',
+        operation: 'wizardRunelordThesisAudit',
+        expect: { thesisShownForOtherSchools: true, thesisHiddenForRunelord: true },
+      },
+    ],
+  },
+  {
+    name: 'grants-munitions-crafter-formulas-once',
+    area: 'issues',
+    profiles: ['foundry14-pf2e', 'foundry14-pf2e-sf2e-anachronism'],
+    steps: [
+      {
+        session: 'gm',
+        operation: 'munitionsCrafterFormulaAudit',
+        expect: { onlyMunitionsFormulas: true, choiceCount: 4 },
+      },
+    ],
+  },
+  {
+    name: 'planner-advanced-devotion-champion-feat',
+    area: 'issues',
+    profiles: ['foundry14-pf2e', 'foundry14-pf2e-sf2e-anachronism'],
+    fixture: 'planner',
+    steps: [
+      {
+        session: 'gm',
+        operation: 'plannerAdvancedDevotionAudit',
+        expect: { championFeatChoiceOffered: true, onlyChampionFeats: true, capsAtHalfLevel: true },
+      },
+    ],
+  },
+  {
     name: 'creation-classless-class-archetypes',
     area: 'issues',
     profiles: ['foundry14-pf2e', 'foundry14-pf2e-sf2e-anachronism'],

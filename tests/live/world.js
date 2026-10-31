@@ -1096,6 +1096,60 @@ export async function wizardClasslessArchetypeAudit(data) {
   };
 }
 
+export async function wizardRunelordThesisAudit(data) {
+  const wizard = await openWizardFor(data);
+  await selectCoreCreation(wizard, 'wizard');
+  if (wizard.data.class?.slug !== 'wizard') throw Error('Wizard class missing from catalog');
+  const thesisBefore = wizard.visibleSteps.includes('thesis');
+  await clickWizardStep(wizard, 'subclass');
+  const runelord = await packDocumentByName('pf2e.classfeatures', 'Runelord');
+  await waitFor(
+    () => wizard.element.querySelector(`[data-action="selectSubclass"][data-uuid="${CSS.escape(runelord.uuid)}"]`),
+    'Runelord did not render as a wizard school',
+  );
+  await clickSubclassByUuid(wizard, runelord.uuid);
+  return {
+    thesisShownForOtherSchools: thesisBefore,
+    thesisHiddenForRunelord: !wizard.visibleSteps.includes('thesis'),
+  };
+}
+
+export async function munitionsCrafterFormulaAudit() {
+  const munitions = await packDocumentByName('pf2e.feats-srd', 'Munitions Crafter');
+  const { buildFeatGrantRequirements } = await import('/modules/pf2e-leveler/scripts/plan/feat-grants.js');
+  const requirements = await buildFeatGrantRequirements({
+    feats: [{ uuid: munitions.uuid, name: munitions.name }],
+    level: 1,
+  });
+  const formulaRequirements = requirements.filter((requirement) => requirement.kind === 'formula');
+  return {
+    onlyMunitionsFormulas: formulaRequirements.length > 0
+      && formulaRequirements.every((requirement) => requirement.sourceFeatUuid === munitions.uuid),
+    choiceCount: formulaRequirements.filter((requirement) => requirement.confidence !== 'fixed').reduce((sum, requirement) => sum + Number(requirement.count ?? 0), 0),
+  };
+}
+
+export async function plannerAdvancedDevotionAudit(data) {
+  const planner = await openPlannerFor(data);
+  const devotion = await packDocumentByName('pf2e.feats-srd', 'Advanced Devotion');
+  planner.plan.levels[6] ??= {};
+  planner.plan.levels[6].classFeats = [{
+    uuid: devotion.uuid, name: devotion.name, slug: devotion.slug, img: devotion.img,
+    level: devotion.system.level.value, traits: devotion.system.traits.value, choices: {},
+  }];
+  await planner._savePlanAndRender();
+  await clickPlannerLevel(planner, 6);
+  const { ClassRegistry } = await import('/modules/pf2e-leveler/scripts/classes/registry.js');
+  const context = await planner._buildLevelContext(ClassRegistry.get(planner.plan.classSlug), planner._getVariantOptions());
+  const choiceSet = (context.classFeatChoiceSets ?? []).find((set) => set.syntheticType === 'advanced-multiclass-class-feat');
+  const options = choiceSet?.options ?? [];
+  return {
+    championFeatChoiceOffered: options.length > 0,
+    onlyChampionFeats: options.every((option) => (option.traits ?? []).includes('champion')),
+    capsAtHalfLevel: options.every((option) => Number(option.level ?? 0) <= 3),
+  };
+}
+
 export async function wizardGladiatorLoreAudit(data) {
   const wizard = await openWizardFor(data);
   await clickWizardStep(wizard, 'background');
@@ -1292,6 +1346,53 @@ export async function plannerClearLevelAudit(data) {
     foundry.applications.api.DialogV2.confirm = originalConfirm;
   }
   return { populated, cleared: true };
+}
+
+export async function plannerMultitalentedAudit(data) {
+  const actor = ownedActor(data);
+  // Meet multiclass attribute prerequisites so only the dedication lock could block a pick.
+  await actor.update({
+    'system.build.attributes.manual': true,
+    ...Object.fromEntries(['str', 'dex', 'con', 'int', 'wis', 'cha'].map((key) => [`system.abilities.${key}.mod`, 4])),
+  });
+  const planner = await openPlannerFor(data);
+  const [multitalented, acrobat] = await Promise.all([
+    packDocumentByName('pf2e.feats-srd', 'Multitalented'),
+    packDocumentByName('pf2e.feats-srd', 'Acrobat Dedication'),
+  ]);
+  const entry = (doc) => ({ uuid: doc.uuid, name: doc.name, slug: doc.slug, img: doc.img, level: doc.system.level.value, traits: doc.system.traits.value, choices: {} });
+  planner.plan.levels[2] ??= {};
+  planner.plan.levels[2].classFeats = [entry(acrobat)];
+  planner.plan.levels[9] ??= {};
+  planner.plan.levels[9].ancestryFeats = [entry(multitalented)];
+  await planner._savePlanAndRender();
+  await clickPlannerLevel(planner, 9);
+
+  const { ClassRegistry } = await import('/modules/pf2e-leveler/scripts/classes/registry.js');
+  const context = await planner._buildLevelContext(ClassRegistry.get(planner.plan.classSlug), planner._getVariantOptions());
+  const choiceSet = (context.ancestryFeatChoiceSets ?? []).find((set) => set.flag === 'multitalented');
+  await planner._openPlannedFeatChoicePicker({ category: 'ancestryFeats', flag: 'multitalented', index: 0 });
+  const picker = await waitFor(
+    () => [...openApplications()].find((app) => (app?.options?.id ?? app?.id) === 'pf2e-leveler-feat-picker'
+      && app.element?.querySelector('[data-action="selectFeat"]')),
+    'Multitalented feat picker did not render',
+    90000,
+  );
+  const selectButtons = [...picker.element.querySelectorAll('[data-action="selectFeat"]')];
+  const enabled = selectButtons.filter((button) => !button.disabled);
+  const lockText = game.i18n.localize('PF2E_LEVELER.FEAT_PICKER.ARCHETYPE_DEDICATION_LOCK');
+  const lockedCount = [...picker.element.querySelectorAll('.feat-option')]
+    .filter((option) => option.textContent.includes(lockText)).length;
+  await picker.close();
+  return {
+    choiceOffered: Boolean(choiceSet),
+    optionCount: choiceSet?.options?.length ?? 0,
+    pickerCategory: choiceSet?.choicePicker?.category ?? null,
+    pickerOptionCount: selectButtons.length,
+    selectableDedicationCount: enabled.length,
+    dedicationsSelectable: enabled.length > 0,
+    noDedicationLock: lockedCount === 0,
+  };
 }
 
 export async function plannerCustomChoicesAudit(data) {
