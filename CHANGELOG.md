@@ -1,3 +1,10 @@
+## 3.12.14
+
+### Fixed
+
+- **Background lore choices** - Backgrounds that let you choose a Lore skill (such as Escort's "Art Lore, Corporate Lore, Legal Lore, or Underworld Lore", Spike Larcenist's "either Absalom Station Lore or Underworld Lore", or "a Lore skill of your choice") no longer grant every lore they mention. The skills step now shows a Background Lore pick with the listed options, plus a custom lore when the background allows any. Affects many SF2e and PF2e backgrounds
+- **Starship Dweller and similar backgrounds** - Backgrounds that pair a skill choice with a fixed lore now grant that lore
+
 ## 3.12.13
 
 ### Fixed
