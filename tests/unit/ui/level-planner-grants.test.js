@@ -5,11 +5,13 @@ import { ClassRegistry } from '../../../scripts/classes/registry.js';
 import { ALCHEMIST } from '../../../scripts/classes/alchemist.js';
 import { WIZARD } from '../../../scripts/classes/wizard.js';
 import { FIGHTER } from '../../../scripts/classes/fighter.js';
+import { CHAMPION } from '../../../scripts/classes/champion.js';
 
 beforeAll(() => {
   if (!ClassRegistry.get('alchemist')) ClassRegistry.register(ALCHEMIST);
   if (!ClassRegistry.get('wizard')) ClassRegistry.register(WIZARD);
   if (!ClassRegistry.get('fighter')) ClassRegistry.register(FIGHTER);
+  if (!ClassRegistry.get('champion')) ClassRegistry.register(CHAMPION);
 });
 
 describe('level planner grant previews', () => {
@@ -605,6 +607,60 @@ describe('level planner grant previews', () => {
     expect(context.archetypeFeatChoiceSets[0].options).not.toEqual(expect.arrayContaining([
       expect.objectContaining({ value: 'Compendium.pf2e.feats-srd.Item.furious-focus' }),
     ]));
+  });
+
+  test('builds a champion feat choice for Advanced Devotion, which names its class only in text', async () => {
+    const devotion = {
+      uuid: 'feat-advanced-devotion',
+      name: 'Advanced Devotion',
+      slug: 'advanced-devotion',
+      system: {
+        slug: 'advanced-devotion',
+        traits: { value: ['archetype'] },
+        description: { value: '<p>You gain one champion feat. For the purpose of meeting its prerequisites, your champion level is equal to half your character level.</p>' },
+        rules: [{ key: 'ActiveEffectLike', mode: 'add', path: 'flags.system.championDedicationCount', value: 1 }],
+      },
+    };
+    global.fromUuid = jest.fn(async (uuid) => (uuid === devotion.uuid ? devotion : null));
+
+    const planner = {
+      actor: createMockActor({ items: [] }),
+      selectedLevel: 6,
+      plan: {
+        classSlug: 'alchemist',
+        levels: {
+          6: {
+            archetypeFeats: [{ uuid: devotion.uuid, name: devotion.name, slug: devotion.slug, traits: ['archetype'], choices: {} }],
+            featGrants: [],
+          },
+        },
+      },
+      _compendiumCache: {
+        'category-feats': [
+          { uuid: 'Compendium.pf2e.feats-srd.Item.deity-weapon', name: "Deity's Domain", type: 'feat', category: 'class', level: 1, traits: ['champion'], rarity: 'common' },
+          { uuid: 'Compendium.pf2e.feats-srd.Item.aura-of-courage', name: 'Aura of Courage', type: 'feat', category: 'class', level: 4, traits: ['champion'], rarity: 'common' },
+          { uuid: 'Compendium.pf2e.feats-srd.Item.combat-grab', name: 'Combat Grab', type: 'feat', category: 'class', level: 2, traits: ['fighter'], rarity: 'common' },
+        ],
+      },
+      _buildAttributeContext: jest.fn(() => ({})),
+      _buildIntelligenceBenefitContext: jest.fn(() => ({})),
+      _buildIntBonusSkillContext: jest.fn(() => []),
+      _buildIntBonusLanguageContext: jest.fn(() => []),
+      _buildSkillContext: jest.fn(() => []),
+      _buildSpellContext: jest.fn(async () => ({ showSpells: false })),
+      _isCustomPlanOpen: jest.fn(() => false),
+    };
+
+    const context = await buildLevelContext(planner, ALCHEMIST, {});
+
+    expect(context.archetypeFeatChoiceSets).toEqual([
+      expect.objectContaining({
+        syntheticType: 'advanced-multiclass-class-feat',
+        options: [
+          expect.objectContaining({ label: "Deity's Domain", level: 1 }),
+        ],
+      }),
+    ]);
   });
 
   test('builds a browsable Free Heart background choice from prose-only PF2e data', async () => {

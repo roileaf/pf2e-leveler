@@ -1455,8 +1455,10 @@ async function buildAdvancedMulticlassClassFeatChoiceSet(planner, feat, source, 
   const name = String(feat?.name ?? source?.name ?? '').trim().toLowerCase();
   const isConcoction = slug === 'basic-concoction' || slug === 'advanced-concoction' || name === 'basic concoction' || name === 'advanced concoction';
 
-  const classSlug = isConcoction ? 'alchemist' : getPlannerDedicationArchetypeSlug(feat, source);
-  if (!classSlug || !ClassRegistry.has(classSlug)) return null;
+  const classSlug = isConcoction
+    ? 'alchemist'
+    : [getPlannerDedicationArchetypeSlug(feat, source), getGrantedClassFeatSlug(source)].find((slug) => ClassRegistry.has(slug));
+  if (!classSlug) return null;
 
   const maxLevel = Math.max(1, Math.floor(Number(planner?.selectedLevel ?? 1) / 2));
   const feats = await loadCompendiumCategory(planner, 'feats');
@@ -2473,6 +2475,13 @@ function getPlannerDedicationArchetypeSlug(feat, source) {
   const traits = [
     ...(Array.isArray(feat?.traits) ? feat.traits : []),
     ...(source?.system?.traits?.value ?? []),
+// Feats such as Advanced Devotion carry only the archetype trait and name the class in their
+// text instead: "You gain one champion feat."
+function getGrantedClassFeatSlug(source) {
+  const description = String(source?.system?.description?.value ?? '').replace(/<[^>]+>/g, ' ').toLowerCase();
+  return description.match(/\byou gain (?:one|a|an) ([a-z-]+) feat\b/u)?.[1] ?? null;
+}
+
     ...(feat?.system?.traits?.value ?? []),
   ]
     .map((trait) => String(trait).toLowerCase())
