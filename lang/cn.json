@@ -410,6 +410,8 @@
             "IMPORT": "导入",
             "CONFIRM_TITLE": "创建角色",
             "LORE_SKILLS": "学识技能",
+            "BACKGROUND_LORE": "背景学识",
+            "BACKGROUND_LORE_HINT": "你的背景让你在 {count} 项自选学识技能上受训。",
             "SPELLS_HINT": "选择你的内在法术。",
             "AUTO_TRAINED": "职业",
             "DIVINE_FONT_HEAL": "治疗",

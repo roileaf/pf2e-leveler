@@ -245,6 +245,8 @@
       "ADDITIONAL_LANGUAGES": "Langues supplementaires",
       "NO_LANGUAGES": "Aucun choix de langue supplementaire disponible.",
       "LORE_SKILLS": "Competences de savoir",
+      "BACKGROUND_LORE": "Savoir d'historique",
+      "BACKGROUND_LORE_HINT": "Votre historique vous rend qualifié dans {count} compétence(s) de Savoir de votre choix.",
       "SPELLS_HINT": "Selectionnez vos sorts initiaux.",
       "AUTO_TRAINED": "Classe",
       "DIVINE_FONT_HEAL": "Soin",

@@ -200,15 +200,22 @@ export function getLanguageRarityMap() {
 }
 
 export async function getBackgroundLores(wizard) {
-  if (!wizard.data.background?.uuid) return [];
+  return (await resolveBackgroundLores(wizard)).lores;
+}
+
+export async function getBackgroundLoreChoice(wizard) {
+  return (await resolveBackgroundLores(wizard)).choice;
+}
+
+async function resolveBackgroundLores(wizard) {
+  const empty = { lores: [], choice: null };
+  if (!wizard.data.background?.uuid) return empty;
   const item = await wizard._getCachedDocument(wizard.data.background.uuid);
-  if (!item) return [];
+  if (!item) return empty;
   const source = localizeWithFallback('CREATION.AUTO_TRAINED_BACKGROUND', 'Background');
+  const description = item.system?.description?.value ?? '';
   const choiceContext = getSelectedBackgroundChoiceContext(wizard, item);
-  const selectedDescription = extractSelectedBackgroundChoiceDescription(
-    item.system?.description?.value ?? '',
-    choiceContext.labels,
-  );
+  const selectedDescription = extractSelectedBackgroundChoiceDescription(description, choiceContext.labels);
   const dynamicLore = getDynamicBackgroundLorePlaceholder(wizard, item);
   const selectedDescriptionLores = selectedDescription
     ? parseSubclassLores([], selectedDescription)
@@ -216,20 +223,26 @@ export async function getBackgroundLores(wizard) {
   const staticLores = selectedDescriptionLores.length > 0
     ? []
     : (item.system?.trainedSkills?.lore ?? []);
+  const ruleLores = parseSubclassLores(filterBackgroundGrantRules(item.system?.rules ?? [], choiceContext), '');
   // Description parsing is a fallback; when trainedSkills.lore is set it is authoritative
   // (Gladiator's data says "Gladatorial Lore" while its text says "Gladiatorial Lore").
-  const descriptionLores = dynamicLore || selectedDescriptionLores.length > 0 || choiceContext.hasChoiceSets
-    ? selectedDescriptionLores
-    : staticLores.length > 0 ? [] : parseSubclassLores([], item.system?.description?.value ?? '');
-  const loreNames = [
-    ...staticLores,
-    ...parseSubclassLores(filterBackgroundGrantRules(item.system?.rules ?? [], choiceContext), ''),
-    ...descriptionLores,
-  ];
+  const loreClause = dynamicLore || staticLores.length > 0 || selectedDescriptionLores.length > 0 || ruleLores.length > 0
+    ? null
+    : parseBackgroundLoreClause(description);
+  // Text like "either Legal Lore or Underworld Lore" or "a Lore skill of your choice" is a pick,
+  // not a grant of every lore it names.
+  const loreChoice = loreClause?.isChoice ? loreClause : null;
+  let descriptionLores = selectedDescriptionLores;
+  if (loreClause) descriptionLores = loreChoice ? [] : loreClause.options;
+  else if (!dynamicLore && selectedDescriptionLores.length === 0 && !choiceContext.hasChoiceSets && staticLores.length === 0) {
+    descriptionLores = parseSubclassLores([], description);
+  }
+  const chosenLores = loreChoice ? getChosenBackgroundLores(wizard.data.background, loreChoice) : [];
+  const loreNames = [...staticLores, ...ruleLores, ...descriptionLores, ...chosenLores];
   if (dynamicLore) loreNames.push(dynamicLore);
 
   const seen = new Set();
-  return loreNames
+  const lores = loreNames
     .filter((name) => {
       const normalized = normalizeLoreName(name);
       if (!normalized || seen.has(normalized)) return false;
@@ -237,6 +250,95 @@ export async function getBackgroundLores(wizard) {
       return true;
     })
     .map((name) => ({ name, source }));
+  return {
+    lores,
+    choice: loreChoice
+      ? { options: loreChoice.options, count: loreChoice.count, allowCustom: loreChoice.allowCustom, selected: chosenLores }
+      : null,
+  };
+}
+
+function getChosenBackgroundLores(background, choice) {
+  const optionNames = new Set(choice.options.map(normalizeLoreName));
+  return (background?.loreChoices ?? [])
+    .filter((name) => choice.allowCustom || optionNames.has(normalizeLoreName(name)))
+    .slice(0, choice.count);
+}
+
+const LORE_CHOICE_COUNTS = { two: 2, three: 3, four: 4 };
+const LORE_CHOICE_LEAD_WORDS = new Set(['either', 'the', 'your', 'choice', 'of']);
+
+// Reads the single "You're trained in ... Lore" sentence of a background. Returns the lores it
+// names and whether they are a pick (isChoice) or all granted.
+export function parseBackgroundLoreClause(html) {
+  const sentences = descriptionParagraphs(String(html ?? '').replace(/@UUID\[[^\]]*\]\{([^}]*)\}/g, '$1'))
+    .flatMap((paragraph) => paragraph.split(/(?<=[.!?])\s+/u))
+    .map((sentence) => sentence.replace(/’/g, "'"))
+    .filter((sentence) => /\btrained in\b/iu.test(sentence) && /\blore\b/iu.test(sentence));
+  if (sentences.length !== 1) return null;
+
+  const sentence = sentences[0];
+  const options = extractLoreChoiceOptions(sentence);
+  const allowCustom = /\b(?:a|an|one|any|the|two|three)\s+(?:[a-z']+\s+){0,2}[Ll]ore\b/u.test(sentence);
+  const countWord = sentence.match(/\b(two|three|four)\s+(?:of the following|[Ll]ore skills)\b/iu)?.[1];
+  const count = LORE_CHOICE_COUNTS[countWord?.toLowerCase()] ?? 1;
+  if (!allowCustom && options.length === 0) return null;
+  return { options, count, allowCustom, isChoice: allowCustom || options.length > count };
+}
+
+function extractLoreChoiceOptions(sentence) {
+  const skillSlugs = [...new Set([...Object.values(SKILL_ALIASES), ...getActiveSkillSlugs()])];
+  const skillNames = new Set([...skillSlugs, ...skillSlugs.map((slug) => localizeSkillSlug(slug).toLowerCase())]);
+  const options = [];
+  // "the Augmentation or Life Science Lore skill" shares the trailing "Lore" across the list.
+  let pending = [];
+  const items = sentence
+    .replace(/[.!?]+$/u, '')
+    .split(/\s*[,:;()]\s*|\s+(?:or|and|plus)\s+/u)
+    .map((item) => item.replace(/\s+skills?$/iu, '').trim());
+
+  for (const item of items) {
+    if (!item) continue;
+    const words = item.split(/\s+/u);
+    const run = trailingTitleRun(words);
+    const lead = words.slice(0, words.length - run.length);
+    if (run.length >= 2 && run.at(-1) === 'Lore') {
+      options.push(...pending.map((name) => `${name} Lore`), run.join(' '));
+      pending = [];
+    } else if (
+      run.length > 0
+      && run.at(-1) !== 'Lore'
+      && lead.every((word) => LORE_CHOICE_LEAD_WORDS.has(word.toLowerCase()))
+      && !skillNames.has(run.join(' ').toLowerCase())
+    ) {
+      pending.push(run.join(' '));
+    } else {
+      pending = [];
+    }
+  }
+
+  const seen = new Set();
+  return options.filter((name) => {
+    const key = normalizeLoreName(name);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function trailingTitleRun(words) {
+  const run = [];
+  for (let index = words.length - 1; index >= 0; index--) {
+    const word = words[index];
+    if (/^\p{Lu}[\p{L}'-]*$/u.test(word)) {
+      run.unshift(word);
+    } else if (word === 'of' && run.length > 0 && /^\p{Lu}/u.test(words[index - 1] ?? '')) {
+      run.unshift(word);
+    } else {
+      break;
+    }
+  }
+  return run;
 }
 
 export function parseSubclassLores(rules, html) {

@@ -316,6 +316,11 @@ export function setBackground(data, item) {
   return data;
 }
 
+export function setBackgroundLoreChoices(data, lores) {
+  if (data.background) data.background.loreChoices = lores;
+  return data;
+}
+
 export function setClass(data, item) {
   data.class = item
     ? {

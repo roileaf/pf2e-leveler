@@ -298,6 +298,8 @@
       "ADDITIONAL_LANGUAGES": "Zusätzliche Sprachen",
       "NO_LANGUAGES": "Keine zusätzlichen Sprachen zur Auswahl verfügbar.",
       "LORE_SKILLS": "Kenntnisse",
+      "BACKGROUND_LORE": "Hintergrund-Kenntnis",
+      "BACKGROUND_LORE_HINT": "Dein Hintergrund bildet dich in {count} Kenntnis(sen) deiner Wahl aus.",
       "SPELLS_HINT": "Wähle deine anfänglichen Zauber.",
       "AUTO_TRAINED": "Klasse",
       "DIVINE_FONT_HEAL": "Heilung",

@@ -142,6 +142,12 @@ export function activateCharacterWizardListeners(wizard, el) {
 
   el.querySelector('[data-action="addLoreSkill"]')?.addEventListener('click', () => wizard._promptLoreSkill());
 
+  el.querySelectorAll('[data-action="toggleBackgroundLore"]').forEach((btn) => {
+    btn.addEventListener('click', () => wizard._toggleBackgroundLore(btn.dataset.lore));
+  });
+
+  el.querySelector('[data-action="addBackgroundLore"]')?.addEventListener('click', () => wizard._promptBackgroundLore());
+
   el.querySelectorAll('[data-action="toggleLanguage"]').forEach((btn) => {
     btn.addEventListener('click', () => wizard._toggleLanguage(btn.dataset.language));
   });

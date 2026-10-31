@@ -1,5 +1,6 @@
 import { CharacterWizard } from '../../../scripts/ui/character-wizard/index.js';
 import { buildSummaryContext } from '../../../scripts/ui/character-wizard/summary.js';
+import { parseBackgroundLoreClause } from '../../../scripts/ui/character-wizard/skills-languages.js';
 import { MODULE_ID } from '../../../scripts/constants.js';
 import { ClassRegistry } from '../../../scripts/classes/registry.js';
 import { CLERIC } from '../../../scripts/classes/cleric.js';
@@ -1578,6 +1579,138 @@ describe('CharacterWizard skills step grants', () => {
     await expect(wizard._getBackgroundLores()).resolves.toEqual([
       { name: 'Gladatorial Lore', source: 'Background' },
     ]);
+  });
+
+  describe('background lore choices', () => {
+    const backgrounds = {
+      'background-escort-uuid': {
+        rules: [],
+        description: "<p>You're trained in the Diplomacy skill and a Lore skill related to your escort duties, such as Art Lore, Corporate Lore, Legal Lore, or Underworld Lore. You gain the @UUID[Compendium.sf2e.feats.Item.4RjDxgvNXNl5GG9d]{Hobnobber} skill feat.</p>",
+      },
+      'background-spike-uuid': {
+        rules: [],
+        description: "<p>You're trained in the Thievery skill and either the Absalom Station Lore or the Underworld Lore skill.</p>",
+      },
+      'background-starship-dweller-uuid': {
+        rules: [
+          { key: 'ChoiceSet', flag: 'skill', choices: [{ label: 'PF2E.Skill.Crafting', value: 'crafting' }] },
+          { key: 'ActiveEffectLike', mode: 'upgrade', path: 'system.skills.{item|flags.system.rulesSelections.skill}.rank', value: 1 },
+        ],
+        description: "<p>You're trained in the Crafting or Piloting skill and the Idari Lore skill.</p>",
+      },
+    };
+
+    function createBackgroundWizard(uuid) {
+      global.fromUuid = jest.fn(async (requested) => (requested === uuid
+        ? {
+          uuid,
+          system: {
+            trainedSkills: { value: [], lore: [] },
+            rules: backgrounds[uuid].rules,
+            description: { value: backgrounds[uuid].description },
+          },
+        }
+        : null));
+      const wizard = new CharacterWizard(createMockActor());
+      wizard.data.background = { uuid, name: 'Background' };
+      jest.spyOn(wizard, '_saveAndRender').mockResolvedValue();
+      return wizard;
+    }
+
+    it('grants none of the suggested lores until one is chosen', async () => {
+      const wizard = createBackgroundWizard('background-escort-uuid');
+
+      await expect(wizard._getBackgroundLores()).resolves.toEqual([]);
+
+      await wizard._toggleBackgroundLore('Legal Lore');
+
+      await expect(wizard._getBackgroundLores()).resolves.toEqual([
+        { name: 'Legal Lore', source: 'Background' },
+      ]);
+    });
+
+    it('replaces the pick and accepts a custom lore when the text allows any lore', async () => {
+      const wizard = createBackgroundWizard('background-escort-uuid');
+
+      await wizard._toggleBackgroundLore('Art Lore');
+      await wizard._toggleBackgroundLore('gambling');
+
+      expect(wizard.data.background.loreChoices).toEqual(['Gambling Lore']);
+      await expect(wizard._getBackgroundLores()).resolves.toEqual([
+        { name: 'Gambling Lore', source: 'Background' },
+      ]);
+    });
+
+    it('restricts an either/or lore to the listed options', async () => {
+      const wizard = createBackgroundWizard('background-spike-uuid');
+
+      await wizard._toggleBackgroundLore('Gambling Lore');
+      expect(wizard.data.background.loreChoices).toBeUndefined();
+
+      await wizard._toggleBackgroundLore('Underworld Lore');
+      await expect(wizard._getBackgroundLores()).resolves.toEqual([
+        { name: 'Underworld Lore', source: 'Background' },
+      ]);
+    });
+
+    it('shows the pick on the skills step and blocks the step until it is made', async () => {
+      const wizard = createBackgroundWizard('background-spike-uuid');
+      wizard.currentStep = 19;
+      wizard.data.class = { slug: 'rogue', uuid: 'class-uuid', name: 'Rogue' };
+
+      const context = await wizard._getStepContext();
+
+      expect(context.lores).toEqual([]);
+      expect(context.backgroundLoreChoice).toEqual({
+        count: 1,
+        allowCustom: false,
+        missing: 1,
+        options: [
+          { name: 'Absalom Station Lore', selected: false },
+          { name: 'Underworld Lore', selected: false },
+        ],
+        custom: [],
+      });
+      expect(wizard._isStepComplete('skills')).toBe(false);
+    });
+
+    it.each([
+      [
+        "You're trained in the Crafting skill and the Augmentation or Life Science Lore skill.",
+        { options: ['Augmentation Lore', 'Life Science Lore'], count: 1, allowCustom: false, isChoice: true },
+      ],
+      [
+        "You're trained in the Survival skill and the Darklands, Desert, or Jungle Lore skill.",
+        { options: ['Darklands Lore', 'Desert Lore', 'Jungle Lore'], count: 1, allowCustom: false, isChoice: true },
+      ],
+      [
+        "You're trained in four of the following: Plane of Air Lore, Plane of Earth Lore, Plane of Fire Lore, Plane of Metal Lore, Plane of Water Lore, or Plane of Wood Lore.",
+        {
+          options: ['Plane of Air Lore', 'Plane of Earth Lore', 'Plane of Fire Lore', 'Plane of Metal Lore', 'Plane of Water Lore', 'Plane of Wood Lore'],
+          count: 4,
+          allowCustom: false,
+          isChoice: true,
+        },
+      ],
+      [
+        "You're trained in the Diplomacy skill and a Lore skill thematically associated with the members of the ancestry you grew up with: Dwarf, Elf, Gnome, Goblin, or Halfling.",
+        { options: [], count: 1, allowCustom: true, isChoice: true },
+      ],
+      [
+        "You're trained in the Intimidation skill and the Warfare Lore skill.",
+        { options: ['Warfare Lore'], count: 1, allowCustom: false, isChoice: false },
+      ],
+    ])('reads the background lore clause: %s', (sentence, expected) => {
+      expect(parseBackgroundLoreClause(`<p>${sentence}</p>`)).toEqual(expected);
+    });
+
+    it('still grants a fixed lore named next to a skill choice', async () => {
+      const wizard = createBackgroundWizard('background-starship-dweller-uuid');
+
+      await expect(wizard._getBackgroundLores()).resolves.toEqual([
+        { name: 'Idari Lore', source: 'Background' },
+      ]);
+    });
   });
 
   it('extracts background lore skills from ActiveEffectLike skill rank rules', async () => {

@@ -357,6 +357,8 @@
       "ADDITIONAL_LANGUAGES": "Additional Languages",
       "NO_LANGUAGES": "No additional language choices available.",
       "LORE_SKILLS": "Lore Skills",
+      "BACKGROUND_LORE": "Background Lore",
+      "BACKGROUND_LORE_HINT": "Your background trains you in {count} Lore skill(s) of your choice.",
       "SPELLS_HINT": "Select your initial spells.",
       "AUTO_TRAINED": "Class",
       "DIVINE_FONT_HEAL": "Healing",

@@ -1,7 +1,7 @@
 import { CLASS_SUBCLASS_TYPES, MODULE_ID, MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID, SKILLS, ATTRIBUTES, SUBCLASS_TAGS, ANCESTRY_TRAIT_ALIASES, WEALTH_MODES, CHARACTER_WEALTH, PERMANENT_ITEM_TYPES, expandPermanentItemSlots } from '../../constants.js';
 import { ClassRegistry } from '../../classes/registry.js';
 import { ensureClassItemRegistered } from '../../classes/ensure.js';
-import { createCreationData, getClassSelectionData, normalizeCreationData, setAncestry, setHeritage, setMixedAncestry, setBackground, setClass, setDualClass, setImplement, setSubconsciousMind, setThesis, setDeity, setSkills, setLanguages, setLores, setSelectedLoreSkills, addSpell, removeSpell, setSpellPrepared, setGrantedFeatSections, setAncestryFeat, setAncestryParagonFeat, setClassFeat, setDualClassFeat, setSkillFeat, setFeatChoice, getGrantedFeatChoiceValues, upsertCreationFeatGrant, addEquipment, removeCreationFeatGrantSelection, setPermanentItem } from '../../creation/creation-model.js';
+import { createCreationData, getClassSelectionData, normalizeCreationData, setAncestry, setHeritage, setMixedAncestry, setBackground, setBackgroundLoreChoices, setClass, setDualClass, setImplement, setSubconsciousMind, setThesis, setDeity, setSkills, setLanguages, setLores, setSelectedLoreSkills, addSpell, removeSpell, setSpellPrepared, setGrantedFeatSections, setAncestryFeat, setAncestryParagonFeat, setClassFeat, setDualClassFeat, setSkillFeat, setFeatChoice, getGrantedFeatChoiceValues, upsertCreationFeatGrant, addEquipment, removeCreationFeatGrantSelection, setPermanentItem } from '../../creation/creation-model.js';
 import { buildFeatGrantRequirements, getFeatGrantCompletion, getFeatGrantSelections } from '../../plan/feat-grants.js';
 import { getCreationData, saveCreationData, exportCreationData, importCreationData } from '../../creation/creation-store.js';
 import { applyCreation } from '../../creation/apply-creation.js';
@@ -22,7 +22,7 @@ import { createMixedAncestryHeritage, getMixedAncestrySelectedValue, isMixedAnce
 import { areSkillTrainingChoicesComplete, buildFeatChoicesContext, buildSkillTrainingChoicesContext, buildSubclassChoicesContext, extractChoiceValue, findMatchingChoiceOption, formatChoiceLabel, getPendingChoices, getSelectedChoiceLabels, getSelectedFeatChoiceLabels, getSelectedSubclassChoiceLabels, hydrateChoiceSets, isHandlerManagedFocusSpellChoiceRenderSection, isRawValueChoiceSet, isSkillStepChoiceSet, parseChoiceSets, refreshGrantedFeatChoiceSections, buildMixedAncestryChoiceOptions, getSelectedHandlerChoiceSourceItems } from './choice-sets.js';
 import { buildApplyOverlayContext, getApplyPromptRows, getPromptMatchTexts, matchActivePromptRow, normalizePromptText, resolvePromptSelectionLabel } from './apply-overlay.js';
 import { buildSummaryContext } from './summary.js';
-import { buildLanguageContext, buildSelectedLoreSkillContext, buildSkillContext, collectWizardDeitySkillMap, collectFeatLanguageGrants, getBackgroundLores, getBackgroundTrainedSkills, getLanguageMap, getActiveSkillSlugs, getSelectedSubclassChoiceSkillMap, getActiveSkillConfigEntry, normalizeLoreSkillName, parseSubclassLores } from './skills-languages.js';
+import { buildLanguageContext, buildSelectedLoreSkillContext, buildSkillContext, collectWizardDeitySkillMap, collectFeatLanguageGrants, getBackgroundLoreChoice, getBackgroundLores, getBackgroundTrainedSkills, getLanguageMap, getActiveSkillSlugs, getSelectedSubclassChoiceSkillMap, getActiveSkillConfigEntry, normalizeLoreSkillName, parseSubclassLores } from './skills-languages.js';
 import { activateCharacterWizardListeners } from './listeners.js';
 import { buildFlexiblePreparationOptions, buildSpellContext, getSanitizedCurriculumSelections, limitCurriculumSelections, resolveFocusSpells, resolveGrantedSpells, resolveSummaryCurriculumSpells, resolveSummaryFocusSpells } from './spells.js';
 import { loadCommanderTactics, loadCompendium, loadCompendiumCategory, loadAncestries, loadBackgrounds, loadClasses, loadDeities, loadExemplarIkons, loadHeritages, loadInventorArmorModifications, loadInventorArmorOptions, loadInventorWeaponModifications, loadInventorWeaponOptions, loadKineticImpulses, loadOptionalClassArchetypes, loadRawHeritages, loadSubclasses, loadSubclassesForClass, loadTaggedClassFeatures, loadThaumaturgeImplements, loadTheses, parseCurriculum, parseSpellUuidsFromDescription, parseVesselSpell, resolveClassSubclassTag } from './loaders.js';
@@ -960,10 +960,46 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _promptLoreSkill() {
-    const dialogClass = foundry?.applications?.api?.DialogV2 ?? globalThis.Dialog;
-    if (!dialogClass?.prompt) return;
+    const value = await this._promptLoreName();
+    if (value !== null) await this._toggleLoreSkill(value);
+  }
 
-    const value = await dialogClass.prompt({
+  async _toggleBackgroundLore(name) {
+    const choice = await getBackgroundLoreChoice(this);
+    if (!choice) return;
+    const option = choice.options.find((entry) => entry.toLowerCase() === String(name ?? '').trim().toLowerCase());
+    const custom = choice.selected.find((entry) => entry.toLowerCase() === String(name ?? '').trim().toLowerCase());
+    if (!option && !custom && !choice.allowCustom) return;
+    const lore = option ?? custom ?? normalizeLoreSkillName(name);
+    if (!lore) return;
+
+    const key = lore.toLowerCase();
+    let selected = [...choice.selected];
+    if (selected.some((entry) => entry.toLowerCase() === key)) {
+      selected = selected.filter((entry) => entry.toLowerCase() !== key);
+    } else if (choice.count === 1) {
+      selected = [lore];
+    } else if (selected.length < choice.count) {
+      selected.push(lore);
+    } else {
+      return;
+    }
+
+    setBackgroundLoreChoices(this.data, selected);
+    this._featChoiceDataDirty = true;
+    this._saveAndRender();
+  }
+
+  async _promptBackgroundLore() {
+    const value = await this._promptLoreName();
+    if (value !== null) await this._toggleBackgroundLore(value);
+  }
+
+  async _promptLoreName() {
+    const dialogClass = foundry?.applications?.api?.DialogV2 ?? globalThis.Dialog;
+    if (!dialogClass?.prompt) return null;
+
+    return dialogClass.prompt({
       window: {
         title: game.i18n?.localize?.('PF2E_LEVELER.CREATION.LORE_SKILLS') ?? 'Lore Skills',
       },
@@ -981,8 +1017,6 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
         },
       },
     });
-
-    await this._toggleLoreSkill(value);
   }
 
   async _toggleLanguage(lang) {
@@ -2055,7 +2089,9 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
       case 'languages':
         return this.data.languages.length >= (this._cachedMaxLanguages ?? 0);
       case 'skills':
-        return areSkillTrainingChoicesComplete(this.data) && (
+        return areSkillTrainingChoicesComplete(this.data)
+          && (this._cachedBackgroundLoreChoice?.missing ?? 0) === 0
+          && (
           (this.data.skills?.length ?? 0) + (this.data.selectedLoreSkills?.length ?? 0)
         ) >= (this._cachedMaxSkills ?? 1);
       case 'feats':
@@ -2243,6 +2279,8 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
         const maxSkills = await this._getAdditionalSkillCount();
         this._cachedMaxSkills = maxSkills;
         const bgLores = await this._getBackgroundLores();
+        const backgroundLoreChoice = buildBackgroundLoreChoiceContext(await getBackgroundLoreChoice(this));
+        this._cachedBackgroundLoreChoice = backgroundLoreChoice;
         const subclassLores = (this.data.subclass?.grantedLores ?? []).map((name) => ({
           name,
           source: this.data.subclass.name,
@@ -2297,6 +2335,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
           selectedCount,
           skillsNote: this._getSkillsNote(),
           lores: allLores,
+          backgroundLoreChoice,
           selectedLoreSkills,
           canAddLoreSkill: selectedCount < maxSkills,
           ...skillChoiceContext,
@@ -3489,6 +3528,19 @@ function dedupeLores(lores) {
   }
 
   return result;
+}
+
+function buildBackgroundLoreChoiceContext(choice) {
+  if (!choice) return null;
+  const selectedKeys = new Set(choice.selected.map((name) => name.toLowerCase()));
+  const optionKeys = new Set(choice.options.map((name) => name.toLowerCase()));
+  return {
+    count: choice.count,
+    allowCustom: choice.allowCustom,
+    missing: Math.max(0, choice.count - choice.selected.length),
+    options: choice.options.map((name) => ({ name, selected: selectedKeys.has(name.toLowerCase()) })),
+    custom: choice.selected.filter((name) => !optionKeys.has(name.toLowerCase())),
+  };
 }
 
 function inferFeatChoiceTypes(option, buildState) {

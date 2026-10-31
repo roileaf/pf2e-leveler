@@ -1403,6 +1403,37 @@
         {{/each}}
       </div>
 
+      {{#if backgroundLoreChoice}}
+      <div class="section-header" style="margin-top: var(--leveler-spacing-md);">
+        <i class="section-header__icon fa-solid fa-scroll"></i>
+        {{localize "PF2E_LEVELER.CREATION.BACKGROUND_LORE"}}
+      </div>
+      <p class="wizard-hint">{{format "PF2E_LEVELER.CREATION.BACKGROUND_LORE_HINT" count=backgroundLoreChoice.count}}</p>
+      <div class="skill-btn-grid">
+        {{#each backgroundLoreChoice.options}}
+        <button type="button" class="skill-btn skill-btn--stacked {{#if this.selected}}selected{{/if}}" data-action="toggleBackgroundLore" data-lore="{{this.name}}">
+          <span class="skill-btn__content">
+            <span class="skill-btn__name">{{this.name}}</span>
+          </span>
+          <span class="skill-btn__rank rank-text-trained" style="{{#unless this.selected}}visibility: hidden;{{/unless}}">{{localize "PF2E_LEVELER.SKILLS.TRAINED"}}</span>
+        </button>
+        {{/each}}
+        {{#each backgroundLoreChoice.custom}}
+        <button type="button" class="skill-btn skill-btn--stacked selected" data-action="toggleBackgroundLore" data-lore="{{this}}" data-tooltip="{{localize 'PF2E_LEVELER.UI.REMOVE'}}">
+          <span class="skill-btn__content">
+            <span class="skill-btn__name">{{this}}</span>
+          </span>
+          <span class="skill-btn__rank rank-text-trained"><i class="fa-solid fa-xmark"></i> {{localize "PF2E_LEVELER.UI.REMOVE"}}</span>
+        </button>
+        {{/each}}
+      </div>
+      {{#if backgroundLoreChoice.allowCustom}}
+      <button type="button" class="spell-add-btn" data-action="addBackgroundLore" style="margin-top: var(--leveler-spacing-sm);">
+        <i class="fa-solid fa-plus"></i> {{localize "PF2E_LEVELER.UI.ADD"}} {{localize "PF2E_LEVELER.CREATION.BACKGROUND_LORE"}}
+      </button>
+      {{/if}}
+      {{/if}}
+
       <div class="section-header" style="margin-top: var(--leveler-spacing-md);">
         <i class="section-header__icon fa-solid fa-book-open"></i>
         {{localize "PF2E_LEVELER.CREATION.LORE_SKILLS"}}
