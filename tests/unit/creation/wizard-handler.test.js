@@ -1,5 +1,37 @@
 import { WizardHandler } from '../../../scripts/creation/class-handlers/wizard.js';
 import { CasterBaseHandler } from '../../../scripts/creation/class-handlers/caster-base.js';
+import { createCreationData, getClassSelectionData, setClass, setSubclass } from '../../../scripts/creation/creation-model.js';
+
+describe('WizardHandler thesis step', () => {
+  const thesisStep = () => new WizardHandler().getExtraSteps().find((step) => step.id === 'thesis');
+  const school = (suppressedFeatures) => ({
+    uuid: 'school-uuid',
+    name: 'School',
+    slug: 'school',
+    system: { subfeatures: { suppressedFeatures } },
+  });
+
+  it('hides the thesis and clears a picked one when the school replaces Arcane Thesis', () => {
+    const data = createCreationData();
+    setClass(data, { slug: 'wizard', name: 'Wizard' });
+    getClassSelectionData(data, 'class').thesis = { uuid: 'spell-blending', name: 'Spell Blending' };
+
+    setSubclass(data, school(['Compendium.pf2e.classfeatures.Item.M89l9FOnjHe63wD7']), 'arcane', [], [], [], [], null);
+
+    expect(thesisStep().visible(data)).toBe(false);
+    expect(getClassSelectionData(data, 'class').thesis).toBeNull();
+  });
+
+  it('keeps the thesis for ordinary schools, including name-based suppression lists', () => {
+    const data = createCreationData();
+    setClass(data, { slug: 'wizard', name: 'Wizard' });
+    setSubclass(data, school([]), 'arcane', [], [], [], [], null);
+    expect(thesisStep().visible(data)).toBe(true);
+
+    setSubclass(data, school(['Compendium.pf2e.classfeatures.Item.Arcane Thesis']), 'arcane', [], [], [], [], null);
+    expect(thesisStep().visible(data)).toBe(false);
+  });
+});
 
 describe('WizardHandler.getSpellbookCounts', () => {
   it.each([

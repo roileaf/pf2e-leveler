@@ -593,6 +593,18 @@ export function setPrimaryApparition(data, uuid, target = 'class') {
   return data;
 }
 
+export const ARCANE_THESIS = { id: 'M89l9FOnjHe63wD7', name: 'Arcane Thesis' };
+
+function getSuppressedFeatureUuids(item) {
+  const uuids = item?.system?.subfeatures?.suppressedFeatures ?? item?.suppressedFeatures ?? [];
+  return Array.isArray(uuids) ? uuids.filter((uuid) => typeof uuid === 'string') : [];
+}
+
+// Class archetypes such as Runelord replace a core class feature; pf2e lists it by id or by name.
+export function subclassSuppressesFeature(subclass, { id, name }) {
+  return (subclass?.suppressedFeatures ?? []).some((uuid) => uuid.endsWith(`.${id}`) || uuid.endsWith(`.${name}`));
+}
+
 export function setSubclass(
   data,
   item,
@@ -617,9 +629,11 @@ export function setSubclass(
         choices: {},
         choiceCurricula: {},
         curriculum,
+        suppressedFeatures: getSuppressedFeatureUuids(item),
       }
     : null;
   const bucket = getClassSelectionData(data, 'class');
+  if (subclassSuppressesFeature(data.subclass, ARCANE_THESIS)) bucket.thesis = null;
   bucket.innovationItem = null;
   bucket.innovationModification = null;
   bucket.kineticGateMode = null;
@@ -656,9 +670,11 @@ export function setDualSubclass(
         choices: {},
         choiceCurricula: {},
         curriculum,
+        suppressedFeatures: getSuppressedFeatureUuids(item),
       }
     : null;
   const bucket = getClassSelectionData(data, 'dualClass');
+  if (subclassSuppressesFeature(data.dualSubclass, ARCANE_THESIS)) bucket.thesis = null;
   bucket.innovationItem = null;
   bucket.innovationModification = null;
   bucket.kineticGateMode = null;

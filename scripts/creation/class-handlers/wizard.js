@@ -1,5 +1,5 @@
 import { CasterBaseHandler } from './caster-base.js';
-import { getEffectiveSubclassCurriculum } from '../creation-model.js';
+import { ARCANE_THESIS, getEffectiveSubclassCurriculum, subclassSuppressesFeature } from '../creation-model.js';
 
 const CURRICULUM_ENTRY_FLAG = 'curriculumEntry';
 
@@ -16,7 +16,8 @@ export class WizardHandler extends CasterBaseHandler {
 
   getExtraSteps() {
     return [
-      { id: 'thesis', label: 'Arcane Thesis', visible: () => true },
+      // Runelord trades the thesis for a personal rune.
+      { id: 'thesis', label: 'Arcane Thesis', visible: (data) => !subclassSuppressesFeature(data.subclass, ARCANE_THESIS) },
     ];
   }
 
