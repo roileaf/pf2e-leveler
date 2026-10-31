@@ -488,6 +488,45 @@ describe('feat grant requirements', () => {
     ]);
   });
 
+  test('drops formulas of a feat granted only as a rules vehicle', async () => {
+    const docs = {
+      'feat-munitions-vehicle': createFeat({
+        uuid: 'feat-munitions-vehicle',
+        name: 'Munitions Crafter',
+        system: {
+          description: {
+            value: '<p>You become trained in Crafting and gain the advanced alchemy benefits. You gain a formula book that includes the formula for black powder and four 1st-level types of common or uncommon alchemical ammunition or bombs of your choice.</p>',
+          },
+          rules: [{ key: 'GrantItem', uuid: 'feat-alchemical-crafting-granted' }],
+          traits: { value: ['gunslinger'] },
+        },
+      }),
+      'feat-alchemical-crafting-granted': createFeat({
+        uuid: 'feat-alchemical-crafting-granted',
+        name: 'Alchemical Crafting',
+        system: {
+          description: {
+            value: '<p>You can use the Craft activity to create alchemical items. When you select this feat, you immediately add the formulas for four common 1st-level alchemical items to your formula book.</p>',
+          },
+          rules: [],
+          traits: { value: ['general', 'skill'] },
+        },
+      }),
+    };
+    global.fromUuid = jest.fn(async (uuid) => docs[uuid] ?? null);
+
+    const requirements = await buildFeatGrantRequirements({
+      feats: [{ uuid: 'feat-munitions-vehicle', name: 'Munitions Crafter' }],
+    });
+
+    const formulaRequirements = requirements.filter((requirement) => requirement.kind === 'formula');
+    expect(formulaRequirements.map((requirement) => requirement.sourceFeatUuid)).toEqual(['feat-munitions-vehicle', 'feat-munitions-vehicle']);
+    expect(formulaRequirements).toEqual(expect.arrayContaining([
+      expect.objectContaining({ confidence: 'fixed', fixedSelections: [expect.objectContaining({ slug: 'black-powder' })] }),
+      expect.objectContaining({ confidence: 'inferred', count: 4 }),
+    ]));
+  });
+
   test('detects counted special formula grants with source-specific filters', async () => {
     const munitions = await buildFeatGrantRequirements({
       feats: [{ uuid: 'feat-munitions-crafter', name: 'Munitions Crafter' }],

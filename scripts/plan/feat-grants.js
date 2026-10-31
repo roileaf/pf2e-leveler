@@ -118,11 +118,19 @@ function reconcileDelegatedFormulaRequirement({
     (requirement) =>
       requirement.kind === 'formula' && requirement.sourceFeatUuid === grantedSource.uuid,
   );
-  if (
-    directFormulaIndex < 0 ||
-    grantedFormulaIndex < 0 ||
-    !describesGrantedFormulaChoice(text, grantedSource.name)
-  ) {
+  if (directFormulaIndex < 0 || grantedFormulaIndex < 0) {
+    return { directRequirements, grantedRequirements };
+  }
+  // pf2e sometimes grants a feat only as a rules vehicle: Munitions Crafter grants Alchemical
+  // Crafting for its crafting ability without giving that feat's formulas, so its own formula
+  // choice replaces the granted one.
+  if (!mentionsGrantedFeat(text, grantedSource.name)) {
+    return {
+      directRequirements,
+      grantedRequirements: grantedRequirements.filter((_, index) => index !== grantedFormulaIndex),
+    };
+  }
+  if (!describesGrantedFormulaChoice(text, grantedSource.name)) {
     return { directRequirements, grantedRequirements };
   }
 
@@ -139,6 +147,11 @@ function reconcileDelegatedFormulaRequirement({
       index === grantedFormulaIndex ? mergedRequirement : requirement,
     ),
   };
+}
+
+function mentionsGrantedFeat(text, grantedName) {
+  const normalizedName = normalizeDescription(grantedName);
+  return !normalizedName || text.includes(normalizedName);
 }
 
 function describesGrantedFormulaChoice(text, grantedName) {
