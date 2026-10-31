@@ -1,3 +1,12 @@
+## 3.12.13
+
+### Fixed
+
+- **Multitalented** - The level 9 human feat now lets you pick a multiclass dedication, including with Free Archetype, instead of blocking every dedication with the usual "take more archetype feats first" rule
+- **Advanced Devotion** - The planner now asks for the champion feat it grants, offering champion feats up to half your level
+- **Runelord** - Runelord wizards are no longer asked for an arcane thesis, since the class archetype replaces it with a personal rune
+- **Munitions Crafter** - Formulas are asked for once (black powder plus four bombs or alchemical ammunition), not again for the Alchemical Crafting feat pf2e grants behind the scenes
+
 ## 3.12.12
 
 ### Added
