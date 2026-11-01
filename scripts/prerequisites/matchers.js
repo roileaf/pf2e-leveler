@@ -88,6 +88,7 @@ export function matchLanguage(parsed, buildState) {
 }
 
 export function matchAbility(parsed, buildState) {
+  if (buildState.ignoreAttributePrerequisites === true) return { met: true, text: parsed.text };
   const currentMod = buildState.attributes?.[parsed.ability] ?? 0;
   if (parsed.isModifier) {
     return { met: currentMod >= parsed.minValue, text: parsed.text };

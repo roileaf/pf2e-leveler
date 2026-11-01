@@ -1,4 +1,4 @@
-import { checkPrerequisites } from '../../../scripts/prerequisites/prerequisite-checker.js';
+import { checkPrerequisites, grantWaivesAttributePrerequisites } from '../../../scripts/prerequisites/prerequisite-checker.js';
 
 describe('checkPrerequisites', () => {
   const buildState = {
@@ -1576,5 +1576,36 @@ describe('checkPrerequisites', () => {
     expect(constructResult.results[0].met).toBe(false);
     expect(undeadResult.met).toBe(false);
     expect(undeadResult.results[0].met).toBe(false);
+  });
+});
+
+describe('grantWaivesAttributePrerequisites', () => {
+  const multitalented = {
+    system: {
+      description: {
+        value: "<p>You gain a 2nd-level multiclass dedication feat.</p><p>If you have the aiuvarin versatile heritage, you don't need to meet the feat's attribute modifier prerequisites.</p>",
+      },
+    },
+  };
+  const wizardDedication = {
+    system: { prerequisites: { value: [{ value: 'Intelligence +2' }] } },
+  };
+
+  test('waives for the named heritage', () => {
+    const buildState = { heritageAliases: new Set(['aiuvarin']), attributes: { int: 0 } };
+    expect(grantWaivesAttributePrerequisites(multitalented, buildState)).toBe(true);
+    expect(checkPrerequisites(wizardDedication, { ...buildState, ignoreAttributePrerequisites: true }).met).toBe(true);
+    expect(checkPrerequisites(wizardDedication, buildState).met).toBe(false);
+  });
+
+  test('does not waive for other heritages', () => {
+    expect(grantWaivesAttributePrerequisites(multitalented, { heritageAliases: new Set(['skilled-human']) })).toBe(false);
+  });
+
+  test('reads the legacy half-elf wording', () => {
+    const legacy = {
+      system: { description: { value: "If you're a half-elf, you don't need to meet the feat's ability score prerequisites." } },
+    };
+    expect(grantWaivesAttributePrerequisites(legacy, { heritageAliases: new Set(['half-elf']) })).toBe(true);
   });
 });

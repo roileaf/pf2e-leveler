@@ -65,6 +65,21 @@ export function checkPrerequisites(feat, buildState) {
   return { met, results: evaluation.results, tree: evaluation.tree };
 }
 
+// Multitalented: "If you have the aiuvarin versatile heritage, you don't need to meet the feat's
+// attribute modifier prerequisites." Legacy text says "If you're a half-elf ... ability score".
+const ATTRIBUTE_WAIVER_PATTERN =
+  /if you(?: have the| are an?|['’]re an?) ([a-z'’ -]+?)(?: versatile)?(?: heritage)?, you don['’]t need to meet the feat['’]s (?:attribute modifier|ability score) prerequisites/iu;
+
+export function grantWaivesAttributePrerequisites(sourceFeat, buildState) {
+  const description = String(sourceFeat?.system?.description?.value ?? '').replace(/<[^>]+>/gu, ' ');
+  const heritage = normalizeSlug(description.match(ATTRIBUTE_WAIVER_PATTERN)?.[1]);
+  if (!heritage) return false;
+  const aliases = buildState?.heritageAliases instanceof Set
+    ? buildState.heritageAliases
+    : new Set(buildState?.heritageAliases ?? []);
+  return aliases.has(heritage);
+}
+
 function filterClassBranchPrerequisites(nodes, feat, buildState) {
   const featClassTraits = getFeatTraitSlugs(feat);
   const activeFeatClasses = new Set(

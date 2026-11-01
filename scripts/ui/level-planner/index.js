@@ -17,6 +17,7 @@ import { getActiveSkillConfigEntry, getActiveSkillSlugs, isActiveSkillSlug, norm
 import { getReplacementRankAfterSkillRetrain } from '../../utils/skill-retrains.js';
 import { promptReviewRequest, isReviewFeatureActive, isApplyBlockedForActor } from '../../access/review-requests.js';
 import { FeatPicker } from '../feat-picker.js';
+import { grantWaivesAttributePrerequisites } from '../../prerequisites/prerequisite-checker.js';
 import { captureScrollState, restoreScrollState } from '../shared/scroll-state.js';
 import { scheduleBringApplicationToFront } from '../shared/window-focus.js';
 import { loadFeats } from '../../feats/feat-cache.js';
@@ -2334,7 +2335,11 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
 
-    const buildState = computeBuildState(this.actor, this.plan, this.selectedLevel);
+    let buildState = computeBuildState(this.actor, this.plan, this.selectedLevel);
+    const sourceFeat = feat.uuid ? await fromUuid(feat.uuid).catch(() => null) : null;
+    if (grantWaivesAttributePrerequisites(sourceFeat, buildState)) {
+      buildState = { ...buildState, ignoreAttributePrerequisites: true };
+    }
     const picker = new FeatPicker(this.actor, pickerConfig.category ?? 'custom', pickerConfig.level ?? this.selectedLevel, buildState, selectChoice, {
       preset: {
         allowedFeatUuids: pickerConfig.allowedUuids,
