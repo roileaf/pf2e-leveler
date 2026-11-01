@@ -1,3 +1,9 @@
+## 3.12.15
+
+### Fixed
+
+- **Multitalented with aiuvarin** - Characters with the aiuvarin versatile heritage no longer have to meet the attribute modifier prerequisites of the multiclass dedication they pick through Multitalented, as the feat allows
+
 ## 3.12.14
 
 ### Fixed
