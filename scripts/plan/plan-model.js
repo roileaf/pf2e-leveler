@@ -161,25 +161,39 @@ export function toggleLevelIntBonusLanguage(plan, level, language) {
   return plan;
 }
 
+const PLANNED_FEAT_KEYS = [
+  'classFeats',
+  'skillFeats',
+  'generalFeats',
+  'ancestryFeats',
+  'archetypeFeats',
+  'mythicFeats',
+  'dualClassFeats',
+  'customFeats',
+];
+
 export function getAllPlannedFeats(plan, upToLevel = MAX_LEVEL) {
   const feats = [];
-  const featKeys = [
-    'classFeats',
-    'skillFeats',
-    'generalFeats',
-    'ancestryFeats',
-    'archetypeFeats',
-    'mythicFeats',
-    'dualClassFeats',
-    'customFeats',
-  ];
   for (let level = 1; level <= upToLevel; level++) {
     const levelData = plan.levels[level];
     if (!levelData) continue;
-    for (const key of featKeys) {
+    for (const key of PLANNED_FEAT_KEYS) {
       if (levelData[key]) {
         feats.push(...levelData[key]);
       }
+    }
+  }
+  return feats;
+}
+
+// A planned feat's own `level` is the feat's level, not the character level it was taken at.
+export function getAllPlannedFeatsWithTakenLevel(plan, upToLevel = MAX_LEVEL) {
+  const feats = [];
+  for (let level = 1; level <= upToLevel; level++) {
+    const levelData = plan.levels[level];
+    if (!levelData) continue;
+    for (const key of PLANNED_FEAT_KEYS) {
+      for (const feat of levelData[key] ?? []) feats.push({ ...feat, takenLevel: level });
     }
   }
   return feats;

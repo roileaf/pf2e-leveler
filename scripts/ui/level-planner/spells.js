@@ -2,7 +2,7 @@ import { ADVANCED_FOCUS_FEAT_SLUGS, GREATER_FOCUS_FEAT_SLUGS, MAX_LEVEL, MIN_PLA
 import { ClassRegistry } from '../../classes/registry.js';
 import { resolveClassEdition } from '../../classes/editions.js';
 import { computeBuildState } from '../../plan/build-state.js';
-import { getAllPlannedFeats, getAllPlannedSpells, getLevelData, getPlanApparitions } from '../../plan/plan-model.js';
+import { getAllPlannedFeatsWithTakenLevel, getAllPlannedSpells, getLevelData, getPlanApparitions } from '../../plan/plan-model.js';
 import { getSpellbookBonusCantripSelectionCount } from '../../plan/spellbook-feats.js';
 import { loadCompendiumCategory } from '../character-wizard/loaders.js';
 import { SUBCLASS_SPELLS, resolveSpellcastingTradition, resolveSubclassSpells } from '../../data/subclass-spells.js';
@@ -385,12 +385,8 @@ function collectDedicationSpellcastingConfigs(planner, level) {
 function collectPlannerSpellcastingFeats(planner, level) {
   const actorFeats = (planner.actor.items?.filter?.((item) => item?.type === 'feat') ?? []).map(normalizeSpellcastingFeatRecord);
   const actorSlugs = new Set(actorFeats.map((feat) => feat.slug).filter(Boolean));
-  const plannedFeats = getAllPlannedFeats(planner.plan, level)
-    .map((feat) => ({
-      ...feat,
-      __plannedGroup: inferFeatPlanGroup(feat),
-      level: feat?.level ?? findFeatLevel(planner, [feat?.slug].filter(Boolean)) ?? level,
-    }))
+  const plannedFeats = getAllPlannedFeatsWithTakenLevel(planner.plan, level)
+    .map((feat) => ({ ...feat, __plannedGroup: inferFeatPlanGroup(feat) }))
     .map(normalizeSpellcastingFeatRecord)
     .filter((feat) => feat.slug && !actorSlugs.has(feat.slug));
 

@@ -12,6 +12,7 @@ import {
   toggleLevelIntBonusSkill,
   toggleLevelIntBonusLanguage,
   getAllPlannedFeats,
+  getAllPlannedFeatsWithTakenLevel,
   getAllPlannedSkillIncreases,
   getAllPlannedBoosts,
   addLevelSpell,
@@ -330,6 +331,18 @@ describe('Intelligence bonus selections', () => {
     expect(plan.levels[5].intBonusLanguages).toEqual(['draconic']);
     toggleLevelIntBonusLanguage(plan, 5, 'draconic');
     expect(plan.levels[5].intBonusLanguages).toEqual([]);
+  });
+});
+
+describe('getAllPlannedFeatsWithTakenLevel', () => {
+  test('tags feats with the level they were taken at, not their own level', () => {
+    const plan = createPlan('alchemist');
+    setLevelFeat(plan, 6, 'archetypeFeats', { slug: 'basic-oracle-spellcasting', level: 4 });
+    setLevelFeat(plan, 8, 'customFeats', { slug: 'later', level: 2 });
+
+    expect(getAllPlannedFeatsWithTakenLevel(plan, 6)).toEqual([
+      expect.objectContaining({ slug: 'basic-oracle-spellcasting', level: 4, takenLevel: 6 }),
+    ]);
   });
 });
 

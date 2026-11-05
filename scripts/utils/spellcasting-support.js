@@ -234,6 +234,9 @@ export function normalizeSpellcastingFeatRecord(feat) {
 }
 
 function getSpellcastingFeatLevel(feat) {
+  const takenLevel = Number(feat?.takenLevel);
+  if (Number.isFinite(takenLevel) && takenLevel > 0) return takenLevel;
+
   const directLevel = Number(feat?.level);
   if (Number.isFinite(directLevel) && directLevel > 0) return directLevel;
 
@@ -251,7 +254,8 @@ function getFirstFeatSelectionLevel(feats) {
 }
 
 function getDedicationSpellcastingSlotRanks(feats, level) {
-  const namesAndSlugs = feats.map((feat) => `${String(feat?.name ?? '').toLowerCase()} ${String(feat?.slug ?? '').toLowerCase()}`);
+  // Feats not yet taken grant nothing, so taking Basic Spellcasting late adds every rank it has caught up on.
+  const namesAndSlugs = feats.filter((feat) => (getSpellcastingFeatLevel(feat) ?? 0) <= level).map((feat) => `${String(feat?.name ?? '').toLowerCase()} ${String(feat?.slug ?? '').toLowerCase()}`);
   const hasBasic = namesAndSlugs.some((value) => value.includes('basic') && value.includes('spellcasting'));
   const hasExpert = namesAndSlugs.some((value) => value.includes('expert') && value.includes('spellcasting'));
   const hasMaster = namesAndSlugs.some((value) => value.includes('master') && value.includes('spellcasting'));

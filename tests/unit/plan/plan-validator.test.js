@@ -564,6 +564,38 @@ describe('validateLevel', () => {
   });
 });
 
+describe('late Basic Spellcasting', () => {
+  test('requires a pick for each rank caught up on', () => {
+    const plan = createPlan('wizard');
+    setLevelFeat(plan, 6, 'classFeats', { uuid: 'class-feat', name: 'Widen Spell', slug: 'widen-spell' });
+    setLevelFeat(plan, 6, 'skillFeats', { uuid: 'skill-feat', name: 'Assurance', slug: 'assurance' });
+    addLevelSpell(plan, 6, { uuid: 'wizard-a', name: 'Fireball', rank: 3, entryType: 'primary' });
+    addLevelSpell(plan, 6, { uuid: 'wizard-b', name: 'Haste', rank: 3, entryType: 'primary' });
+    setLevelFeat(plan, 6, 'archetypeFeats', {
+      uuid: 'feat-druid',
+      name: 'Druid Dedication',
+      slug: 'druid-dedication',
+      traits: ['archetype', 'dedication', 'druid', 'multiclass'],
+    });
+    setLevelFeat(plan, 6, 'customFeats', {
+      uuid: 'feat-basic-druid',
+      name: 'Basic Druid Spellcasting',
+      slug: 'basic-druid-spellcasting',
+      level: 4,
+      traits: ['archetype', 'druid'],
+    });
+    addLevelSpell(plan, 6, { uuid: 'c1', name: 'A', rank: 0, isCantrip: true, entryType: 'archetype:druid' });
+    addLevelSpell(plan, 6, { uuid: 'c2', name: 'B', rank: 0, isCantrip: true, entryType: 'archetype:druid' });
+    addLevelSpell(plan, 6, { uuid: 'r2', name: 'C', rank: 2, entryType: 'archetype:druid' });
+
+    const messages = () => validateLevel(plan, WIZARD, 6, {}, { items: [] }).issues.map((issue) => issue.message);
+    expect(messages()).toContainEqual(expect.stringContaining('1st-rank'));
+
+    addLevelSpell(plan, 6, { uuid: 'r1', name: 'D', rank: 1, entryType: 'archetype:druid' });
+    expect(messages().filter((message) => message.includes('Druid Dedication'))).toEqual([]);
+  });
+});
+
 describe('validatePlan', () => {
   test('empty plan is invalid', () => {
     const plan = createPlan('alchemist');

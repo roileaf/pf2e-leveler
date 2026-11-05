@@ -4,6 +4,7 @@ import { getChoicesForLevel, getGradualBoostGroupLevels, getSkillFeatRestriction
 import { featMatchesSkills } from '../feats/feat-filter.js';
 import { resolveSubclassSpells } from '../data/subclass-spells.js';
 import { getIntelligenceBenefitCount } from './build-state.js';
+import { getAllPlannedFeatsWithTakenLevel } from './plan-model.js';
 import { getSpellbookBonusCantripSelectionCount } from './spellbook-feats.js';
 import { resolveClassEdition } from '../classes/editions.js';
 import { getRequiredSignatureSpellRanks } from '../utils/signature-spells.js';
@@ -476,16 +477,7 @@ function validateDedicationSpellSelections(plan, level, plannedSpells) {
 }
 
 function collectDedicationSpellcastingConfigs(plan, level) {
-  const feats = [];
-  const featKeys = ['classFeats', 'skillFeats', 'generalFeats', 'ancestryFeats', 'archetypeFeats', 'mythicFeats', 'dualClassFeats', 'customFeats'];
-  for (let currentLevel = MIN_PLAN_LEVEL; currentLevel <= level; currentLevel++) {
-    const levelData = plan.levels[currentLevel];
-    if (!levelData) continue;
-    for (const key of featKeys) {
-      feats.push(...(levelData[key] ?? []).map((feat) => ({ ...feat, level: feat?.level ?? currentLevel })));
-    }
-  }
-  return collectArchetypeSpellcastingConfigs(feats, level);
+  return collectArchetypeSpellcastingConfigs(getAllPlannedFeatsWithTakenLevel(plan, level), level);
 }
 
 function ordinal(rank) {

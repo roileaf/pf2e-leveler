@@ -15,14 +15,14 @@ jest.mock('../../../scripts/plan/plan-model.js', () => ({
   getAllPlannedSpells: jest.fn((plan, upToLevel = 20) => Object.entries(plan?.levels ?? {})
     .filter(([level]) => Number(level) <= upToLevel)
     .flatMap(([, data]) => data?.spells ?? [])),
-  getAllPlannedFeats: jest.fn((plan, upToLevel = 20) => {
+  getAllPlannedFeatsWithTakenLevel: jest.fn((plan, upToLevel = 20) => {
     const feats = [];
     const featKeys = ['classFeats', 'skillFeats', 'generalFeats', 'ancestryFeats', 'archetypeFeats', 'mythicFeats', 'dualClassFeats', 'customFeats'];
     for (let level = 1; level <= upToLevel; level++) {
       const levelData = plan?.levels?.[level];
       if (!levelData) continue;
       for (const key of featKeys) {
-        feats.push(...(levelData[key] ?? []));
+        feats.push(...(levelData[key] ?? []).map((feat) => ({ ...feat, takenLevel: level })));
       }
     }
     return feats;
@@ -746,6 +746,60 @@ describe('level planner spell context', () => {
         rankRows: expect.arrayContaining([expect.objectContaining({ rank: 1 })]),
       }),
     ]);
+  });
+
+  test('taking Basic Spellcasting late offers every rank it has caught up on', async () => {
+    getLevelData.mockReturnValue({ spells: [] });
+    const planner = {
+      actor: { items: [] },
+      plan: {
+        classSlug: 'sorcerer',
+        levels: {
+          4: {
+            archetypeFeats: [{
+              uuid: 'feat-oracle',
+              name: 'Oracle Dedication',
+              slug: 'oracle-dedication',
+              level: 2,
+              traits: ['archetype', 'dedication', 'oracle', 'multiclass'],
+            }],
+          },
+          6: {
+            archetypeFeats: [{
+              uuid: 'feat-basic-oracle',
+              name: 'Basic Oracle Spellcasting',
+              slug: 'basic-oracle-spellcasting',
+              level: 4,
+              traits: ['archetype', 'oracle'],
+            }],
+          },
+        },
+      },
+      _ordinalRank: (rank) => `${rank}th`,
+    };
+    const classDef = {
+      slug: 'sorcerer',
+      spellcasting: {
+        tradition: 'arcane',
+        type: 'spontaneous',
+        slots: {
+          4: { cantrips: 5, 1: 4, 2: 3 },
+          6: { cantrips: 5, 1: 4, 2: 4, 3: 3 },
+          8: { cantrips: 5, 1: 4, 2: 4, 3: 4, 4: 3 },
+        },
+      },
+    };
+
+    const atSix = await buildSpellContext(planner, classDef, 6);
+    expect(atSix.dedicationSpellSections[0].rankRows.map((row) => [row.rank, row.count])).toEqual([[1, 1], [2, 1]]);
+    expect(atSix.dedicationSpellSections[0].totalSlotRanks).toEqual([1, 2]);
+
+    const atFour = await buildSpellContext(planner, classDef, 4);
+    expect(atFour.dedicationSpellSections[0].cantripSelectionCount).toBe(2);
+    expect(atFour.dedicationSpellSections[0].rankRows).toEqual([]);
+
+    const atEight = await buildSpellContext(planner, classDef, 8);
+    expect(atEight.dedicationSpellSections[0].rankRows.map((row) => row.rank)).toEqual([3]);
   });
 
   test('dual-class planner builds a separate secondary class spell section', async () => {

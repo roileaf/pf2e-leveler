@@ -346,7 +346,7 @@ function collectPlannedArchetypeSpellcastingFeats(plan, level) {
     for (const key of FEAT_KEYS) {
       const feats = levelData[key] ?? [];
       for (const feat of feats) {
-        results.push({ ...feat, __plannedGroup: key, level: feat?.level ?? Number(rawLevel) });
+        results.push({ ...feat, __plannedGroup: key, takenLevel: Number(rawLevel) });
       }
     }
   }
