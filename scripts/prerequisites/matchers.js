@@ -257,6 +257,13 @@ export function matchLivingCreature(parsed, buildState) {
 }
 
 export function matchDeityState(parsed, buildState) {
+  if (parsed.forbidsPatronDeity) {
+    // Philosophies such as Atheists and Free Agents sit in the deity list but are not patrons.
+    const deity = buildState.deity;
+    const hasPatron = !!(deity?.slug || deity?.name) && deity.category !== 'philosophy';
+    return { met: !hasPatron, text: parsed.text };
+  }
+
   if (parsed.requiredDeity) {
     const currentDeitySlug = normalizeText(buildState.deity?.slug ?? buildState.deity?.name);
     return {

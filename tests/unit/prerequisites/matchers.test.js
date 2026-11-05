@@ -409,6 +409,20 @@ describe('matchClassHp', () => {
 });
 
 describe('matchDeityState', () => {
+  test.each([
+    ['no deity', null, true],
+    ['a blank deity field', { slug: null, name: '' }, true],
+    ['a philosophy', { slug: 'atheists-and-free-agents', name: 'Atheists and Free Agents', category: 'philosophy' }, true],
+    ['a deity', { slug: 'sarenrae', name: 'Sarenrae', category: 'deity' }, false],
+    ['a pantheon', { slug: 'the-godclaw', name: 'The Godclaw', category: 'pantheon' }, false],
+  ])('no patron deity prerequisite with %s', (_label, deity, met) => {
+    const result = matchDeityState(
+      { type: 'deityState', forbidsPatronDeity: true, text: "can't have a patron deity" },
+      { deity },
+    );
+    expect(result.met).toBe(met);
+  });
+
   test('meets exact deity prerequisite when selected deity matches', () => {
     const result = matchDeityState(
       { type: 'deityState', requiredDeity: 'achaekek', text: 'deity is Achaekek' },

@@ -328,6 +328,7 @@ function computeDeityState(actor) {
   return {
     slug: value.slug ?? null,
     name: value.name ?? value.value ?? null,
+    category: value.system?.category ?? value.category ?? null,
     domains: collectDeityDomains(value),
     sanctification: collectDeitySanctification(value),
   };

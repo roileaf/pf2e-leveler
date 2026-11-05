@@ -87,6 +87,7 @@ const FOLLOW_DEITY_PATTERN = /^you follow a deity$/i;
 const DEITY_IS_PATTERN = /^deity is\s+(.+)$/i;
 const DEITY_DOMAIN_PATTERN = /^deity with (?:the\s+)?(.+?)\s+domain$/i;
 const NOT_WORSHIPPER_PATTERN = /^not a worshipper of\s+(.+)$/i;
+const NO_PATRON_DEITY_PATTERN = /^(?:can['\u2019]t|cannot|can not|must not|may not) have a (?:patron )?deity$/i;
 const DEITY_SANCTIFICATION_PATTERN =
   /^(?:must\s+)?(?:worship|worshipper of|follower of|you follow)\s+(?:a\s+)?deity\s+that\s+lists?\s+"?(holy|unholy)"?(?:\s+in\s+(?:their|its)\s+sanctification)?$/i;
 const CHARACTER_SANCTIFICATION_PATTERN = /^"?(holy|unholy)"?\s+in\s+(?:their|your)\s+sanctification$/i;
@@ -576,6 +577,14 @@ function normalizeSanctificationValue(value) {
 }
 
 function tryParseDeityRequirement(text, fullText = text) {
+  if (NO_PATRON_DEITY_PATTERN.test(text)) {
+    return {
+      type: 'deityState',
+      forbidsPatronDeity: true,
+      text: fullText,
+    };
+  }
+
   if (FOLLOW_DEITY_PATTERN.test(text)) {
     return {
       type: 'deityState',

@@ -189,7 +189,12 @@ describe('parsePrerequisite', () => {
     expect(result.requiredDomain).toBe('fire');
   });
 
-  test('parses forbidden deity prerequisite', () => {
+  test('parses no patron deity prerequisite', () => {
+    const result = parsePrerequisite("can't have a patron deity");
+    expect(result).toEqual(expect.objectContaining({ type: 'deityState', forbidsPatronDeity: true }));
+  });
+
+  test('parses not a worshipper requirement', () => {
     const result = parsePrerequisite('not a worshipper of Walkena');
     expect(result.type).toBe('deityState');
     expect(result.forbiddenDeity).toBe('walkena');
