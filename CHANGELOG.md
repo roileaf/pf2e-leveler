@@ -1,3 +1,9 @@
+## 3.12.17
+
+### Fixed
+
+- **Godless Healing** - The "can't have a patron deity" prerequisite is now understood instead of always failing. It's met with no deity or a philosophy such as Atheists and Free Agents, and unmet with a deity or pantheon
+
 ## 3.12.16
 
 ### Fixed
