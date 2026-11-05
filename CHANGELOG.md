@@ -1,3 +1,10 @@
+## 3.12.16
+
+### Fixed
+
+- **Late Basic Spellcasting** - Taking a Basic, Expert or Master archetype spellcasting feat after its own level now offers a spell for every rank it has caught up on. Basic Oracle Spellcasting taken at level 6 asks for a 1st-rank and a 2nd-rank spell, not just 2nd
+- **Late spellcasting dedications** - A spellcasting dedication taken after its own level (such as Oracle Dedication at level 4) now asks for its cantrips at the level you take it. Existing plans like this will show those cantrips as missing until they are picked
+
 ## 3.12.15
 
 ### Fixed
