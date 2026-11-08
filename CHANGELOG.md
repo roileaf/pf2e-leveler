@@ -1,3 +1,9 @@
+## 3.12.18
+
+### Added
+
+- **Reset Experience on Level Up** - New world setting, off by default. When it's on, applying a planned level-up sets the character's experience points to 0
+
 ## 3.12.17
 
 ### Fixed
