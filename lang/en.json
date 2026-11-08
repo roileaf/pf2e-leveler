@@ -613,6 +613,10 @@
         "NAME": "Prompt to Apply Plan on Level Up",
         "HINT": "When a character's level increases, prompts the user to apply planned selections for the newly gained levels."
       },
+      "RESET_XP_ON_LEVEL_UP": {
+        "NAME": "Reset Experience on Level Up",
+        "HINT": "When a planned level-up is applied, sets the character's experience points to 0."
+      },
       "ALLOW_INCOMPLETE_CREATION": {
         "NAME": "Allow Incomplete Character Creation",
         "HINT": "Allows GMs and players to finish Character Creation before every required step is complete."

@@ -499,6 +499,10 @@
         "NAME": "Application automatique au gain de niveau",
         "HINT": "Proposer automatiquement l'application des selections planifiees lorsqu'un personnage gagne un niveau"
       },
+      "RESET_XP_ON_LEVEL_UP": {
+        "NAME": "Reinitialiser l'experience au gain de niveau",
+        "HINT": "Remet les points d'experience du personnage a 0 lorsqu'une montee de niveau planifiee est appliquee."
+      },
       "ALLOW_INCOMPLETE_CREATION": {
         "NAME": "Autoriser une creation de personnage incomplete",
         "HINT": "Permet aux joueurs d'appliquer la creation de personnage meme si toutes les etapes de l'assistant ne sont pas terminees."

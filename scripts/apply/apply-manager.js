@@ -13,6 +13,7 @@ import { applySpellSwaps } from './apply-spell-swaps.js';
 import { applyClassSpecific } from './apply-class-specific.js';
 import { info, error as logError, notify } from '../utils/logger.js';
 import { format } from '../utils/i18n.js';
+import { MODULE_ID } from '../constants.js';
 
 const RANK_LABELS = ['Untrained', 'Trained', 'Expert', 'Master', 'Legendary'];
 const FEAT_KEYS = ['classFeats', 'skillFeats', 'generalFeats', 'ancestryFeats', 'archetypeFeats', 'mythicFeats', 'dualClassFeats', 'customFeats'];
@@ -92,7 +93,9 @@ export async function applyPlan(actor, plan, level, previousLevel = level - 1) {
       }
     }
 
-    await actor.update({ 'system.details.level.value': level });
+    const actorUpdate = { 'system.details.level.value': level };
+    if (game.settings.get(MODULE_ID, 'resetXpOnLevelUp')) actorUpdate['system.details.xp.value'] = 0;
+    await actor.update(actorUpdate);
 
     notify(format('NOTIFICATIONS.APPLIED', { actorName: actor.name, level }));
     return true;

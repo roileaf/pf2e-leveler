@@ -72,6 +72,9 @@ describe('applyPlan', () => {
         format: jest.fn((key, data) => `${key}:${JSON.stringify(data)}`),
         has: jest.fn(() => false),
       },
+      settings: {
+        get: jest.fn(() => false),
+      },
       users: [],
     };
 
@@ -129,6 +132,37 @@ describe('applyPlan', () => {
       content: expect.stringContaining('@UUID[Compendium.pf2e.equipment-srd.Item.formula-5]{formula-5}'),
     }));
     expect(actor.update).toHaveBeenCalledWith({ 'system.details.level.value': 8 });
+  });
+
+  test('leaves experience alone when resetXpOnLevelUp is off', async () => {
+    const actor = {
+      name: 'Alcor',
+      testUserPermission: jest.fn(() => true),
+      update: jest.fn(async () => {}),
+    };
+
+    await applyPlan(actor, { levels: { 5: {} } }, 5, 4);
+
+    expect(game.settings.get).toHaveBeenCalledWith('pf2e-leveler', 'resetXpOnLevelUp');
+    expect(actor.update).toHaveBeenCalledTimes(1);
+    expect(actor.update).toHaveBeenCalledWith({ 'system.details.level.value': 5 });
+  });
+
+  test('resets experience to 0 in the level update when resetXpOnLevelUp is on', async () => {
+    game.settings.get.mockImplementation((moduleId, key) => moduleId === 'pf2e-leveler' && key === 'resetXpOnLevelUp');
+    const actor = {
+      name: 'Alcor',
+      testUserPermission: jest.fn(() => true),
+      update: jest.fn(async () => {}),
+    };
+
+    await applyPlan(actor, { levels: { 5: {}, 6: {} } }, 6, 4);
+
+    expect(actor.update).toHaveBeenCalledTimes(1);
+    expect(actor.update).toHaveBeenCalledWith({
+      'system.details.level.value': 6,
+      'system.details.xp.value': 0,
+    });
   });
 
   test('summarizes class feature choices with labels instead of raw rulesSelection UUIDs', async () => {
