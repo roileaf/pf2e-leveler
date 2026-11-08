@@ -609,8 +609,8 @@
         "HINT": "Wenn die Stufe eines Charakters steigt, wird der Benutzer aufgefordert, die geplanten Auswahlen für die neu erreichten Stufen anzuwenden."
       },
       "RESET_XP_ON_LEVEL_UP": {
-        "NAME": "Erfahrungspunkte beim Stufenaufstieg zurücksetzen",
-        "HINT": "Setzt die Erfahrungspunkte des Charakters auf 0, wenn ein geplanter Stufenaufstieg angewendet wird."
+        "NAME": "Erfahrungspunkte beim Stufenaufstieg abziehen",
+        "HINT": "Zieht beim Anwenden eines geplanten Stufenaufstiegs die pro Stufe benötigten EP (meist 1000) für jede gewonnene Stufe ab, sodass überschüssige EP erhalten bleiben. Die EP fallen nie unter 0."
       },
       "ALLOW_INCOMPLETE_CREATION": {
         "NAME": "Unvollständige Charaktererschaffung erlauben",

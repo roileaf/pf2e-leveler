@@ -148,20 +148,61 @@ describe('applyPlan', () => {
     expect(actor.update).toHaveBeenCalledWith({ 'system.details.level.value': 5 });
   });
 
-  test('resets experience to 0 in the level update when resetXpOnLevelUp is on', async () => {
-    game.settings.get.mockImplementation((moduleId, key) => moduleId === 'pf2e-leveler' && key === 'resetXpOnLevelUp');
-    const actor = {
+  describe('with resetXpOnLevelUp on', () => {
+    const makeActor = (xp) => ({
       name: 'Alcor',
+      system: { details: { xp } },
       testUserPermission: jest.fn(() => true),
       update: jest.fn(async () => {}),
-    };
+    });
 
-    await applyPlan(actor, { levels: { 5: {}, 6: {} } }, 6, 4);
+    beforeEach(() => {
+      game.settings.get.mockImplementation((moduleId, key) => moduleId === 'pf2e-leveler' && key === 'resetXpOnLevelUp');
+    });
 
-    expect(actor.update).toHaveBeenCalledTimes(1);
-    expect(actor.update).toHaveBeenCalledWith({
-      'system.details.level.value': 6,
-      'system.details.xp.value': 0,
+    test('carries leftover XP over in the level update', async () => {
+      const actor = makeActor({ value: 1020, max: 1000 });
+
+      await applyPlan(actor, { levels: { 5: {} } }, 5, 4);
+
+      expect(actor.update).toHaveBeenCalledTimes(1);
+      expect(actor.update).toHaveBeenCalledWith({
+        'system.details.level.value': 5,
+        'system.details.xp.value': 20,
+      });
+    });
+
+    test('uses a custom XP threshold and deducts it once per level gained', async () => {
+      const actor = makeActor({ value: 3100, max: 1500 });
+
+      await applyPlan(actor, { levels: { 5: {}, 6: {} } }, 6, 4);
+
+      expect(actor.update).toHaveBeenCalledWith({
+        'system.details.level.value': 6,
+        'system.details.xp.value': 100,
+      });
+    });
+
+    test('never drops XP below 0 when leveling without enough XP', async () => {
+      const actor = makeActor({ value: 300, max: 1000 });
+
+      await applyPlan(actor, { levels: { 5: {} } }, 5, 4);
+
+      expect(actor.update).toHaveBeenCalledWith({
+        'system.details.level.value': 5,
+        'system.details.xp.value': 0,
+      });
+    });
+
+    test('falls back to 1000 XP per level when the actor has no XP threshold', async () => {
+      const actor = makeActor({ value: 1250 });
+
+      await applyPlan(actor, { levels: { 5: {} } }, 5, 4);
+
+      expect(actor.update).toHaveBeenCalledWith({
+        'system.details.level.value': 5,
+        'system.details.xp.value': 250,
+      });
     });
   });
 

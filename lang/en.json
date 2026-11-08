@@ -614,8 +614,8 @@
         "HINT": "When a character's level increases, prompts the user to apply planned selections for the newly gained levels."
       },
       "RESET_XP_ON_LEVEL_UP": {
-        "NAME": "Reset Experience on Level Up",
-        "HINT": "When a planned level-up is applied, sets the character's experience points to 0."
+        "NAME": "Deduct Experience on Level Up",
+        "HINT": "When a planned level-up is applied, subtracts the XP needed per level (usually 1000) for each level gained, so leftover XP carries over. XP never goes below 0."
       },
       "ALLOW_INCOMPLETE_CREATION": {
         "NAME": "Allow Incomplete Character Creation",

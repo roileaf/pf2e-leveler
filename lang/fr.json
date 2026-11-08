@@ -500,8 +500,8 @@
         "HINT": "Proposer automatiquement l'application des selections planifiees lorsqu'un personnage gagne un niveau"
       },
       "RESET_XP_ON_LEVEL_UP": {
-        "NAME": "Reinitialiser l'experience au gain de niveau",
-        "HINT": "Remet les points d'experience du personnage a 0 lorsqu'une montee de niveau planifiee est appliquee."
+        "NAME": "Deduire l'experience au gain de niveau",
+        "HINT": "Lorsqu'une montee de niveau planifiee est appliquee, retire l'XP requise par niveau (generalement 1000) pour chaque niveau gagne, afin de conserver l'XP excedentaire. L'XP ne descend jamais sous 0."
       },
       "ALLOW_INCOMPLETE_CREATION": {
         "NAME": "Autoriser une creation de personnage incomplete",

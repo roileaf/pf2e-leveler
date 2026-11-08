@@ -15,7 +15,8 @@ import { info, error as logError, notify } from '../utils/logger.js';
 import { format } from '../utils/i18n.js';
 import { MODULE_ID } from '../constants.js';
 
-const RANK_LABELS = ['Untrained', 'Trained', 'Expert', 'Master', 'Legendary'];
+const DEFAULT_XP_PER_LEVEL = 1000;
+const RANK_LABELS =['Untrained', 'Trained', 'Expert', 'Master', 'Legendary'];
 const FEAT_KEYS = ['classFeats', 'skillFeats', 'generalFeats', 'ancestryFeats', 'archetypeFeats', 'mythicFeats', 'dualClassFeats', 'customFeats'];
 
 export async function promptApplyPlan(actor, plan, level, previousLevel = level - 1) {
@@ -94,7 +95,9 @@ export async function applyPlan(actor, plan, level, previousLevel = level - 1) {
     }
 
     const actorUpdate = { 'system.details.level.value': level };
-    if (game.settings.get(MODULE_ID, 'resetXpOnLevelUp')) actorUpdate['system.details.xp.value'] = 0;
+    if (game.settings.get(MODULE_ID, 'resetXpOnLevelUp')) {
+      actorUpdate['system.details.xp.value'] = getLeftoverXp(actor, level - previousLevel);
+    }
     await actor.update(actorUpdate);
 
     notify(format('NOTIFICATIONS.APPLIED', { actorName: actor.name, level }));
@@ -128,6 +131,13 @@ export async function applyRetraining(actor, plan, level) {
     notify(`Retraining failed: ${err.message}`, 'error');
     return false;
   }
+}
+
+function getLeftoverXp(actor, levelsGained) {
+  const xp = actor.system?.details?.xp ?? {};
+  const current = Number(xp.value) || 0;
+  const perLevel = Number(xp.max) || DEFAULT_XP_PER_LEVEL;
+  return Math.max(0, current - perLevel * Math.max(0, levelsGained));
 }
 
 function getPlannedLevelsInRange(plan, startLevel, endLevel) {
