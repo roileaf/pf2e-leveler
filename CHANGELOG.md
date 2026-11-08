@@ -1,3 +1,9 @@
+## 3.12.19
+
+### Changed
+
+- **Deduct Experience on Level Up** - The XP setting added in 3.12.18 no longer sets experience to 0. It now subtracts the XP needed per level (the character's XP threshold, usually 1000) for each level gained, so leftover XP carries over: 1020 XP becomes 20 after leveling. XP never goes below 0. Worlds that already turned the setting on keep it on
+
 ## 3.12.18
 
 ### Added
