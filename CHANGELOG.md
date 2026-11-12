@@ -1,3 +1,9 @@
+## 3.12.20
+
+### Fixed
+
+- **Champion's Reaction and Champion's Aura prerequisites** - Champions now meet these from 1st level. The cause grants the specific reaction (such as Retributive Strike), so feats like Shield of Reckoning used to show Champion's Reaction as unmet
+
 ## 3.12.19
 
 ### Changed
