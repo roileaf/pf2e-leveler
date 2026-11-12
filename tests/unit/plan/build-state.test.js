@@ -65,6 +65,14 @@ describe('computeBuildState', () => {
     expect(result.met).toBe(['sorcerer', 'wizard', 'magus'].includes(classSlug));
   });
 
+  test.each(["champion's reaction", "champion's aura"])('gives every champion the %s class feature', (prerequisite) => {
+    mockActor.items = [];
+    plan = createPlan('champion');
+    const feat = { system: { prerequisites: { value: [{ value: prerequisite }] } } };
+    expect(checkPrerequisites(feat, computeBuildState(mockActor, plan, 1)).met).toBe(true);
+    expect(checkPrerequisites(feat, computeBuildState(mockActor, createPlan('fighter'), 1)).met).toBe(false);
+  });
+
   test('includes automatic Necromancer Undead Lore progression', () => {
     plan = createPlan('necromancer');
     mockActor.items = [];

@@ -16,6 +16,9 @@ export const CHAMPION = {
   deitySkillTraining: true,
 
   classFeatures: [
+    // The cause grants the actual reaction (Retributive Strike etc.), so no "Champion's Reaction" item lands on the actor.
+    { level: 1, name: "Champion's Reaction", key: 'champions-reaction' },
+    { level: 1, name: "Champion's Aura", key: 'champions-aura' },
     { level: 3, name: 'Blessing of the Devoted', key: 'blessing-of-the-devoted' },
     { level: 5, name: 'Weapon Expertise', key: 'weapon-expertise' },
     { level: 7, name: 'Armor Expertise', key: 'armor-expertise' },
