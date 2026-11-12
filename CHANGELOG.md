@@ -1,3 +1,10 @@
+## 3.12.23
+
+### Fixed
+
+- **Specific focus spell prerequisites** - Feats that need a named focus spell, such as Dimensional Disappearance ("dimensional assault focus spell"), now recognize the spell instead of always failing. Also covers named warden, order and bloodline spell prerequisites
+- **Stylish Tricks** - Swashbucklers now get the extra skill increase at 3rd, 7th and 15th level, limited to Acrobatics or their style's skill
+
 ## 3.12.22
 
 ### Added
