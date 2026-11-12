@@ -387,6 +387,71 @@ describe('CharacterWizard subclass choice-set parsing', () => {
     ]);
   });
 
+  it('treats class feature items as item:type:feature, as for Blessing of the Devoted', async () => {
+    const wizard = new CharacterWizard(createMockActor());
+    const blessedShield = createDoc({
+      uuid: 'Compendium.pf2e.classfeatures.Item.blessed-shield',
+      name: 'Blessed Shield',
+      traits: ['champion'],
+      otherTags: ['blessing-of-the-devoted'],
+      level: 0,
+    });
+    blessedShield.system.category = 'classfeature';
+    const taggedClassFeat = createDoc({
+      uuid: 'Compendium.pf2e.feats-srd.Item.tagged-class-feat',
+      name: 'Tagged Class Feat',
+      otherTags: ['blessing-of-the-devoted'],
+    });
+    taggedClassFeat.system.category = 'class';
+
+    game.packs.set('pf2e.classfeatures', { getDocuments: jest.fn(async () => [blessedShield]) });
+    game.packs.set('pf2e.feats-srd', { getDocuments: jest.fn(async () => [taggedClassFeat]) });
+
+    const sets = await wizard._parseChoiceSets([
+      {
+        key: 'ChoiceSet',
+        flag: 'blessing',
+        choices: { filter: ['item:type:feature', 'item:tag:blessing-of-the-devoted'] },
+      },
+    ]);
+
+    expect(sets).toEqual([
+      expect.objectContaining({
+        flag: 'blessing',
+        options: [expect.objectContaining({ uuid: 'Compendium.pf2e.classfeatures.Item.blessed-shield', label: 'Blessed Shield' })],
+      }),
+    ]);
+  });
+
+  it('offers tagged class features for itemType feat choices such as Animistic Practice', async () => {
+    const wizard = new CharacterWizard(createMockActor());
+    const seer = createDoc({
+      uuid: 'Compendium.pf2e.classfeatures.Item.seer',
+      name: 'Seer',
+      traits: ['animist'],
+      otherTags: ['animistic-practice'],
+    });
+    seer.system.category = 'classfeature';
+
+    game.packs.set('pf2e.classfeatures', { getDocuments: jest.fn(async () => [seer]) });
+    game.packs.set('pf2e.feats-srd', { getDocuments: jest.fn(async () => []) });
+
+    const sets = await wizard._parseChoiceSets([
+      {
+        key: 'ChoiceSet',
+        flag: 'animisticPractice',
+        choices: { itemType: 'feat', filter: ['item:tag:animistic-practice'] },
+      },
+    ]);
+
+    expect(sets).toEqual([
+      expect.objectContaining({
+        flag: 'animisticPractice',
+        options: [expect.objectContaining({ uuid: 'Compendium.pf2e.classfeatures.Item.seer', label: 'Seer' })],
+      }),
+    ]);
+  });
+
   it('supports comparison-object filters such as PF2E lte level caps', async () => {
     const wizard = new CharacterWizard(createMockActor());
     const lowLevelFeat = createDoc({

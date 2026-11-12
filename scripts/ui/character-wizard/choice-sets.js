@@ -1347,6 +1347,11 @@ function isDeityChoiceRule(rule) {
 }
 
 async function resolveChoiceSetOptions(wizard, rule, currentChoices = {}, sourceItem = null, rollOptions = {}) {
+  if (typeof rule.choices === 'string' && rule.choices.startsWith('flags.')) {
+    const choices = collectFlagChoices(wizard, rule.choices);
+    return resolveChoiceSetOptions(wizard, { ...rule, choices }, currentChoices, sourceItem, rollOptions);
+  }
+
   if (Array.isArray(rule.choices)) {
     const selectedValue = currentChoices?.[rule.flag] ?? null;
     const validChoices = rule.choices
@@ -1393,8 +1398,9 @@ async function resolveChoiceSetOptions(wizard, rule, currentChoices = {}, source
   const promptImpliesCommonAncestry = isCommonAncestryChoiceSet(rule)
     && !String(JSON.stringify(resolvedFilter ?? [])).includes('item:rarity:')
   const itemType = typeof rule.choices.itemType === 'string' ? rule.choices.itemType.toLowerCase() : null;
+  // Class features are feat documents, so "itemType: feat" tag choices such as Animistic Practice still offer them.
   const allowsTaggedClassFeatures =
-    !itemType && safeSerializeChoiceFilters(resolvedFilter).includes('item:tag:');
+    (!itemType || itemType === 'feat') && safeSerializeChoiceFilters(resolvedFilter).includes('item:tag:');
   return candidates
     .filter((item) => {
       const type = String(item.type ?? '').toLowerCase();
@@ -1953,6 +1959,23 @@ function resolveConfigChoiceOptions(configPath) {
       return { value: key, label };
     })
     .sort((a, b) => String(a.label).localeCompare(String(b.label)));
+}
+
+// Lists such as flags.system.thaumaturge.adeptChoices are filled by rules on the actor's items. The planner
+// adds the entries from picks planned at earlier levels under wizard.data.plannedActorData.
+function collectFlagChoices(wizard, path) {
+  const seen = new Set();
+  return [wizard?.actor, wizard?.data?.plannedActorData]
+    .flatMap((source) => {
+      const entries = source ? foundry.utils.getProperty(source, path) : null;
+      return Array.isArray(entries) ? entries : [];
+    })
+    .filter((entry) => {
+      const value = extractChoiceValue(entry);
+      if (!value || seen.has(value)) return false;
+      seen.add(value);
+      return true;
+    });
 }
 
 async function resolveStringChoiceOptions(wizard, choicePath) {
@@ -2840,7 +2863,7 @@ function matchesChoiceSetFilterString(item, filter) {
     case 'trait':
       return (item.traits ?? []).includes(value);
     case 'type':
-      return String(item.type ?? '').toLowerCase() === value.toLowerCase();
+      return getChoiceItemRollType(item) === value.toLowerCase();
     case 'level':
       return Number(item.level ?? 0) === Number(value);
     case 'slug':
@@ -2896,6 +2919,14 @@ function getUsageHands(usage) {
   if (value === 'held-in-two-hands') return 2;
   if (value.startsWith('held-in-one')) return 1;
   return 0;
+}
+
+// Mirrors pf2e's FeatPF2e#isFeature: these feat categories report "item:type:feature".
+const FEATURE_CATEGORIES = new Set(['ancestryfeature', 'calling', 'classfeature', 'curse', 'deityboon', 'pfsboon']);
+
+function getChoiceItemRollType(item) {
+  const type = String(item.type ?? '').toLowerCase();
+  return type === 'feat' && FEATURE_CATEGORIES.has(normalizeChoiceCategory(item.category)) ? 'feature' : type;
 }
 
 function normalizeChoiceCategory(category) {

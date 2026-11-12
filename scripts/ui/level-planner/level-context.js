@@ -14,7 +14,7 @@ import { computeBuildState, computeSkillPickerState, getAutomaticInitialSkillTra
 import { isCantripExpansionFeat } from '../../plan/spellbook-feats.js';
 import { isSkillChoiceFeat } from '../../feats/feat-filter.js';
 import { loadCompendium, loadCompendiumCategory, loadDeities, loadTaggedClassFeatures } from '../character-wizard/loaders.js';
-import { extractGrantedTrainedSkills, normalizePf2eCompendiumUuid, parseChoiceSets } from '../character-wizard/choice-sets.js';
+import { extractGrantedTrainedSkills, matchesChoiceSetPredicate, normalizePf2eCompendiumUuid, parseChoiceSets } from '../character-wizard/choice-sets.js';
 import { humanizeSkillLikeLabel, normalizeLoreSkillName, slugifyLoreSkillName } from '../character-wizard/skills-languages.js';
 import { annotateGuidanceBySlug, filterDisallowedForCurrentUser, GUIDANCE_STATUSES, resolveGuidanceStatus } from '../../access/content-guidance.js';
 import { extractFeatSkillRules } from './index.js';
@@ -419,6 +419,7 @@ export function getClassFeaturesForLevel(planner, level) {
 async function buildClassFeatureEntries(planner, level, levelData) {
   const features = getClassFeaturesForLevel(planner, level);
   const wizard = createPlannerChoiceWizard(planner);
+  await addEarlierClassFeaturePicks(wizard, planner, level);
 
   return Promise.all(features.map(async (feature) => {
     const sourceEntry = await resolveClassFeatureSource(planner, feature);
@@ -443,6 +444,67 @@ async function buildClassFeatureEntries(planner, level, levelData) {
         .filter((entry) => entry.options.length > 0),
     };
   }));
+}
+
+// Later class feature choices depend on earlier picks: Third Path to Perfection offers only saves picked before,
+// Implement Adept offers your implements, Gate's Threshold your elements. Picks already on the actor show up in its
+// roll options and flags; picks planned for earlier levels are replayed here from their items' rules.
+async function addEarlierClassFeaturePicks(wizard, planner, level) {
+  for (const option of planner.actor?.getRollOptions?.() ?? []) wizard.rollOptions.add(String(option).toLowerCase());
+
+  const plannedActorData = {};
+  for (const [plannedLevel, levelData] of Object.entries(planner.plan?.levels ?? {})) {
+    if (Number(plannedLevel) >= level) continue;
+    for (const feature of getClassFeaturesForLevel(planner, Number(plannedLevel))) {
+      const selections = getClassFeatureChoiceValues(levelData?.classFeatureChoices?.[feature.key]);
+      if (Object.keys(selections).length === 0) continue;
+
+      const source = (await resolveClassFeatureSource(planner, feature))?.source;
+      replayPlannedItemRules(wizard, plannedActorData, source, selections);
+      for (const value of Object.values(selections)) {
+        if (!isItemUuid(value)) continue;
+        const granted = await fromUuid(value).catch(() => null);
+        if (granted?.slug) wizard.rollOptions.add(`feature:${granted.slug}`);
+        replayPlannedItemRules(wizard, plannedActorData, granted, selections);
+      }
+    }
+  }
+  wizard.data.plannedActorData = plannedActorData;
+}
+
+function replayPlannedItemRules(wizard, plannedActorData, item, selections) {
+  for (const rule of item?.system?.rules ?? []) {
+    const rollOptions = Object.fromEntries([...wizard.rollOptions].map((option) => [option, true]));
+    if (rule?.predicate && !matchesChoiceSetPredicate(rule.predicate, rollOptions)) continue;
+
+    if (rule.key === 'RollOption' && typeof rule.option === 'string') {
+      const option = resolvePlannedRuleTemplate(rule.option, item, selections);
+      if (option) wizard.rollOptions.add(option.toLowerCase());
+      continue;
+    }
+
+    const addsToFlagList = rule.key === 'ActiveEffectLike' && rule.mode === 'add'
+      && String(rule.path ?? '').startsWith('flags.') && rule.value && typeof rule.value === 'object';
+    if (!addsToFlagList) continue;
+    const value = resolvePlannedRuleTemplate(rule.value.value, item, selections);
+    if (!value) continue;
+    const entries = foundry.utils.getProperty(plannedActorData, rule.path) ?? [];
+    const label = resolvePlannedRuleTemplate(rule.value.label, item, selections) ?? value;
+    foundry.utils.setProperty(plannedActorData, rule.path, [...entries, { ...rule.value, label, value }]);
+  }
+}
+
+function resolvePlannedRuleTemplate(template, item, selections) {
+  if (typeof template !== 'string') return null;
+  let unresolved = false;
+  const resolved = template
+    .replace(/\{item\|name\}/gu, item?.name ?? '')
+    .replace(/\{item\|flags\.system\.rulesSelections\.([^}]+)\}/gu, (_match, flag) => {
+      const selected = selections?.[flag];
+      if (!selected) unresolved = true;
+      return selected ?? '';
+    });
+  return unresolved || /\{[^}]*\|/u.test(resolved) ? null : resolved;
 }
 
 async function buildSelectedClassFeatureOptionChoiceSets(wizard, choiceSets, storedChoiceValues) {

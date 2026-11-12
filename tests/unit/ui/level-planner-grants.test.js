@@ -2050,6 +2050,125 @@ describe('level planner grant previews', () => {
     }
   });
 
+  describe('class feature choices that depend on earlier picks', () => {
+    const PATH_CHOICES = (predicateFor) => ['fortitude', 'reflex', 'will'].map((save) => ({
+      label: save,
+      value: save,
+      predicate: predicateFor(save),
+    }));
+    const pathRules = (choices) => [
+      { key: 'ChoiceSet', flag: 'pathToPerfection', choices },
+      { key: 'RollOption', option: 'self:path-to-perfection:{item|flags.system.rulesSelections.pathToPerfection}' },
+    ];
+    const docs = {
+      'Compendium.pf2e.classfeatures.Item.path': { name: 'Path to Perfection', system: { rules: pathRules(PATH_CHOICES(() => undefined)) } },
+      'Compendium.pf2e.classfeatures.Item.second-path': {
+        name: 'Second Path to Perfection',
+        system: { rules: pathRules(PATH_CHOICES((save) => [{ not: `self:path-to-perfection:${save}` }])) },
+      },
+      'Compendium.pf2e.classfeatures.Item.third-path': {
+        name: 'Third Path to Perfection',
+        system: { rules: pathRules(PATH_CHOICES((save) => [`self:path-to-perfection:${save}`])) },
+      },
+      'Compendium.pf2e.classfeatures.Item.second-implement': {
+        name: 'Second Implement',
+        system: { rules: [{ key: 'ChoiceSet', flag: 'implement', choices: { filter: ['item:tag:thaumaturge-implement'] } }] },
+      },
+      'Compendium.pf2e.classfeatures.Item.chalice': {
+        name: 'Chalice',
+        slug: 'chalice',
+        system: {
+          rules: [{
+            key: 'ActiveEffectLike',
+            mode: 'add',
+            path: 'flags.system.thaumaturge.adeptChoices',
+            predicate: ['class:thaumaturge'],
+            value: { label: '{item|name}', value: 'Compendium.pf2e.classfeatures.Item.adept-chalice' },
+          }],
+        },
+      },
+      'Compendium.pf2e.classfeatures.Item.implement-adept': {
+        name: 'Implement Adept',
+        system: { rules: [{ key: 'ChoiceSet', flag: 'implementAdept', choices: 'flags.system.thaumaturge.adeptChoices' }] },
+      },
+    };
+
+    function createPlanner({ classItems, levels, selectedLevel, actorFlags = {}, rollOptions = [] }) {
+      const actor = createMockActor({
+        items: [],
+        flags: actorFlags,
+        class: { slug: 'fighter', name: 'Fighter', system: { items: classItems } },
+      });
+      actor.getRollOptions = () => rollOptions;
+      return {
+        actor,
+        selectedLevel,
+        plan: { classSlug: 'fighter', levels },
+        _compendiumCache: {},
+        _buildAttributeContext: jest.fn(() => ({})),
+        _buildIntelligenceBenefitContext: jest.fn(() => ({})),
+        _buildIntBonusSkillContext: jest.fn(() => []),
+        _buildIntBonusLanguageContext: jest.fn(() => []),
+        _buildSkillContext: jest.fn(() => []),
+        _buildSpellContext: jest.fn(async () => ({ showSpells: false })),
+        _isCustomPlanOpen: jest.fn(() => false),
+      };
+    }
+
+    const optionValues = (context, featureName) => context.classFeatures
+      .find((entry) => entry.name === featureName)?.choiceSets?.[0]?.options.map((option) => option.value) ?? [];
+
+    beforeEach(() => {
+      global.fromUuid = jest.fn(async (uuid) => (docs[uuid] ? { uuid, ...docs[uuid] } : null));
+    });
+
+    test('Monk paths offer saves based on the paths planned at earlier levels', async () => {
+      const classItems = {
+        path: { level: 7, name: 'Path to Perfection', key: 'path-to-perfection', uuid: 'Compendium.pf2e.classfeatures.Item.path' },
+        second: { level: 11, name: 'Second Path to Perfection', key: 'second-path-to-perfection', uuid: 'Compendium.pf2e.classfeatures.Item.second-path' },
+        third: { level: 15, name: 'Third Path to Perfection', key: 'third-path-to-perfection', uuid: 'Compendium.pf2e.classfeatures.Item.third-path' },
+      };
+      const levels = {
+        7: { classFeatureChoices: { 'path-to-perfection': { pathToPerfection: { value: 'reflex' } } } },
+        11: { classFeatureChoices: { 'second-path-to-perfection': { pathToPerfection: { value: 'will' } } } },
+        15: {},
+      };
+
+      const atEleven = await buildLevelContext(createPlanner({ classItems, levels, selectedLevel: 11 }), FIGHTER, {});
+      const atFifteen = await buildLevelContext(createPlanner({ classItems, levels, selectedLevel: 15 }), FIGHTER, {});
+
+      expect(optionValues(atEleven, 'Second Path to Perfection')).toEqual(['fortitude', 'will']);
+      expect(optionValues(atFifteen, 'Third Path to Perfection')).toEqual(['reflex', 'will']);
+    });
+
+    test('Implement Adept offers implements on the actor and implements planned earlier', async () => {
+      const classItems = {
+        second: { level: 5, name: 'Second Implement', key: 'second-implement', uuid: 'Compendium.pf2e.classfeatures.Item.second-implement' },
+        adept: { level: 7, name: 'Implement Adept', key: 'implement-adept', uuid: 'Compendium.pf2e.classfeatures.Item.implement-adept' },
+      };
+      const planner = createPlanner({
+        classItems,
+        selectedLevel: 7,
+        rollOptions: ['class:thaumaturge'],
+        actorFlags: {
+          system: { thaumaturge: { adeptChoices: [{ label: 'Lantern', value: 'Compendium.pf2e.classfeatures.Item.adept-lantern' }] } },
+        },
+        levels: {
+          5: { classFeatureChoices: { 'second-implement': { implement: { value: 'Compendium.pf2e.classfeatures.Item.chalice' } } } },
+          7: {},
+        },
+      });
+
+      const context = await buildLevelContext(planner, FIGHTER, {});
+      const options = context.classFeatures.find((entry) => entry.name === 'Implement Adept')?.choiceSets?.[0]?.options ?? [];
+
+      expect(options.map((option) => [option.label, option.value])).toEqual([
+        ['Lantern', 'Compendium.pf2e.classfeatures.Item.adept-lantern'],
+        ['Chalice', 'Compendium.pf2e.classfeatures.Item.adept-chalice'],
+      ]);
+    });
+  });
+
   test('resolves missing class feature UUIDs from the class feature compendium', async () => {
     const actor = createMockActor({
       items: [],
