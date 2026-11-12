@@ -884,6 +884,18 @@ describe('parsePrerequisiteNode', () => {
     expect(result.subclassType).toBe('mystery');
   });
 
+  test.each([
+    ['dimensional assault focus spell', 'dimensional-assault'],
+    ['animal feature warden spell', 'animal-feature'],
+    ['tempest surge order spell', 'tempest-surge'],
+    ['dragon wings sorcerer bloodline spell', 'dragon-wings'],
+  ])('parses "%s" as a specific spell prerequisite', (text, spellSlug) => {
+    const result = parsePrerequisiteNode(text);
+    expect(result.kind).toBe('leaf');
+    expect(result.type).toBe('spellcastingState');
+    expect(result.spellSlug).toBe(spellSlug);
+  });
+
   test('parses innate spell from ancestry feat source prerequisites', () => {
     const result = parsePrerequisiteNode('At Least One Innate Spell Gained From An Elf Ancestry Feat');
     expect(result.kind).toBe('leaf');

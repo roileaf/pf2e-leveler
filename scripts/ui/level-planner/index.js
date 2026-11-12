@@ -1041,6 +1041,7 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       dualClassDef: dualClassSlug && ClassRegistry.has(dualClassSlug) ? ClassRegistry.get(dualClassSlug) : null,
       ancestralParagon: isAncestralParagonEnabled(),
       ancestryParagonFeatLevels,
+      actor: this.actor,
     };
   }
 

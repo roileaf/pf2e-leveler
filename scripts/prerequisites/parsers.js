@@ -158,6 +158,8 @@ const SIGNATURE_TRICK_PATTERN = /^(?:you\s+)?must\s+have\s+(?:a|an)\s+signature\
 const MULTIPLE_ANCESTRY_FEATS_PATTERN =
   /^ability\s+to\s+select\s+ancestry\s+feats?\s+from\s+multiple\s+ancestries\b/i;
 const SUBCLASS_SPELL_PATTERN = /^(?:a\s+)?(bloodline|mystery|patron)\s+spell$/i;
+const NAMED_FOCUS_SPELL_PATTERN =
+  /^(?:the\s+)?(.+?)\s+(?:focus|warden|order|(?:sorcerer\s+)?bloodline)\s+spell$/i;
 const ORACLE_REVELATION_SPELL_PATTERN =
   /^(?:an?\s+|your\s+)?(?:(?:initial|first)\s+)?revelation spell$/i;
 const SENSE_PATTERN =
@@ -641,6 +643,15 @@ function tryParseSpellcastingRequirement(text, fullText = text) {
     return {
       type: 'subclassSpell',
       subclassType: 'mystery',
+      text: fullText,
+    };
+  }
+
+  const namedFocusSpellMatch = text.match(NAMED_FOCUS_SPELL_PATTERN);
+  if (namedFocusSpellMatch) {
+    return {
+      type: 'spellcastingState',
+      spellSlug: slugify(namedFocusSpellMatch[1]),
       text: fullText,
     };
   }

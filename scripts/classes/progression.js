@@ -48,9 +48,9 @@ export function getChoicesForLevel(classDef, level, options = {}) {
   if (classDef.skillIncreaseSchedule.includes(level)) {
     choices.push({ type: 'skillIncrease' });
   }
-  addClassFeatureSkillIncreaseChoices(choices, classDef, level);
+  addClassFeatureSkillIncreaseChoices(choices, classDef, level, options.actor);
 
-  addSecondaryDualClassChoices(choices, classDef, dualClassDef, level);
+  addSecondaryDualClassChoices(choices, classDef, dualClassDef, level, options.actor);
 
   if (options.freeArchetype && FREE_ARCHETYPE_FEAT_LEVELS.includes(level)) {
     choices.push({ type: 'archetypeFeat' });
@@ -83,7 +83,7 @@ export function getChoicesForLevel(classDef, level, options = {}) {
   return choices;
 }
 
-function addSecondaryDualClassChoices(choices, primaryClassDef, dualClassDef, level) {
+function addSecondaryDualClassChoices(choices, primaryClassDef, dualClassDef, level, actor) {
   if (!dualClassDef) return;
 
   if (
@@ -99,10 +99,10 @@ function addSecondaryDualClassChoices(choices, primaryClassDef, dualClassDef, le
   ) {
     choices.push({ type: 'skillIncrease' });
   }
-  addClassFeatureSkillIncreaseChoices(choices, dualClassDef, level);
+  addClassFeatureSkillIncreaseChoices(choices, dualClassDef, level, actor);
 }
 
-function addClassFeatureSkillIncreaseChoices(choices, classDef, level) {
+function addClassFeatureSkillIncreaseChoices(choices, classDef, level, actor) {
   for (const feature of classDef?.classFeatures ?? []) {
     const benefit = feature?.additionalSkillIncrease;
     if (!benefit || !(benefit.levels ?? [feature.level]).includes(level)) continue;
@@ -113,7 +113,7 @@ function addClassFeatureSkillIncreaseChoices(choices, classDef, level) {
       type: 'skillIncrease',
       source,
       label: feature.name,
-      allowedSkills: [...(benefit.allowedSkills ?? [])],
+      allowedSkills: resolveRestrictedSkills(benefit.allowedSkills, benefit.subclassSkills, actor, classDef.slug),
     });
   }
 }
@@ -123,10 +123,19 @@ export function getSkillFeatRestriction(classDef, level, actor = null) {
   if (!restriction?.levels?.includes(level)) return null;
   if (!restriction.subclassSkills) return restriction;
 
-  // Without a known subclass, any subclass skill is allowed rather than blocking the slot.
-  const subclassSkill = getSubclassSkill(restriction.subclassSkills, actor, classDef.slug);
-  const extraSkills = subclassSkill ? [subclassSkill] : Object.values(restriction.subclassSkills);
-  return { ...restriction, skills: [...new Set([...restriction.skills, ...extraSkills])] };
+  return {
+    ...restriction,
+    skills: resolveRestrictedSkills(restriction.skills, restriction.subclassSkills, actor, classDef.slug),
+  };
+}
+
+function resolveRestrictedSkills(skills = [], subclassSkills = null, actor = null, classSlug = null) {
+  if (!subclassSkills) return [...skills];
+
+  // Without a known subclass, any subclass skill is allowed rather than blocking the choice.
+  const subclassSkill = getSubclassSkill(subclassSkills, actor, classSlug);
+  const extraSkills = subclassSkill ? [subclassSkill] : Object.values(subclassSkills);
+  return [...new Set([...skills, ...extraSkills])];
 }
 
 function getSubclassSkill(subclassSkills, actor, classSlug) {

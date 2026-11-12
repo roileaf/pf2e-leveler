@@ -3,6 +3,7 @@ import { FIGHTER } from '../../../scripts/classes/fighter.js';
 import { ROGUE } from '../../../scripts/classes/rogue.js';
 import { THAUMATURGE } from '../../../scripts/classes/thaumaturge.js';
 import { MECHANIC } from '../../../scripts/classes/mechanic.js';
+import { SWASHBUCKLER } from '../../../scripts/classes/swashbuckler.js';
 
 describe('getGradualBoostGroupLevels', () => {
   test('returns the first gradual boost set for levels 2 through 5', () => {
@@ -73,6 +74,35 @@ describe('additional class skill increases', () => {
     expect(choices[1]).toEqual(expect.objectContaining({
       source: 'thaumaturge:thaumaturgic-expertise',
     }));
+  });
+});
+
+describe('Stylish Tricks', () => {
+  const stylishTricks = (choices) => choices.find((choice) => choice.source === 'swashbuckler:stylish-tricks');
+
+  test.each([3, 7, 15])('adds an extra skill increase beside the normal one at level %i', (level) => {
+    const choices = getChoicesForLevel(SWASHBUCKLER, level);
+
+    expect(choices.filter((choice) => choice.type === 'skillIncrease')).toHaveLength(2);
+    expect(stylishTricks(choices)).toEqual(expect.objectContaining({ label: 'Stylish Tricks' }));
+  });
+
+  test('allows Acrobatics or any style skill when the style is unknown', () => {
+    expect(stylishTricks(getChoicesForLevel(SWASHBUCKLER, 3)).allowedSkills).toEqual([
+      'acrobatics', 'performance', 'intimidation', 'deception', 'athletics', 'thievery', 'diplomacy',
+    ]);
+  });
+
+  test("limits the increase to Acrobatics and the actor's style skill", () => {
+    const actor = {
+      items: [{ type: 'feat', slug: 'fencer', name: 'Fencer', system: { traits: { otherTags: ['swashbuckler-style'] } } }],
+    };
+
+    expect(stylishTricks(getChoicesForLevel(SWASHBUCKLER, 7, { actor })).allowedSkills).toEqual(['acrobatics', 'deception']);
+  });
+
+  test('does not add the bonus at other skill increase levels', () => {
+    expect(stylishTricks(getChoicesForLevel(SWASHBUCKLER, 5))).toBeUndefined();
   });
 });
 

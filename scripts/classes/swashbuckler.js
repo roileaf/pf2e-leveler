@@ -35,7 +35,12 @@ export const SWASHBUCKLER = {
     { level: 1, name: 'Precise Strike', key: 'precise-strike' },
     { level: 3, name: 'Fortitude Expertise', key: 'fortitude-expertise' },
     { level: 3, name: 'Opportune Riposte', key: 'opportune-riposte' },
-    { level: 3, name: STYLISH_TRICKS_NAME, key: 'stylish-tricks' },
+    {
+      level: 3,
+      name: STYLISH_TRICKS_NAME,
+      key: 'stylish-tricks',
+      additionalSkillIncrease: { levels: STYLISH_TRICKS_LEVELS, allowedSkills: ['acrobatics'], subclassSkills: STYLE_SKILLS },
+    },
     { level: 3, name: 'Vivacious Speed', key: 'vivacious-speed' },
     { level: 5, name: 'Weapon Expertise', key: 'weapon-expertise' },
     { level: 7, name: 'Confident Evasion', key: 'confident-evasion' },
