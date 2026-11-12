@@ -1,3 +1,9 @@
+## 3.12.22
+
+### Added
+
+- **Hide Leveler Buttons on Character Sheets** - New per-player setting, off by default. When it's on, the Leveler buttons no longer appear on character sheets for that player. Leveler still opens with its keybinding (Shift+L by default)
+
 ## 3.12.21
 
 ### Fixed
