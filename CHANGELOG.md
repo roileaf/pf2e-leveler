@@ -1,3 +1,11 @@
+## 3.12.21
+
+### Fixed
+
+- **Blessing of the Devoted** - The planner now offers Blessed Armament, Blessed Shield and Blessed Swiftness. Choices that ask for a class feature by type no longer come up empty
+- **Animistic Practice and Eidolon** - Character creation now lists the animist practices and summoner eidolons
+- **Choices that depend on earlier picks** - Later class feature choices now use what you picked at earlier levels, on the character or in the plan. Monk's Second and Third Path to Perfection offer the right saves, Thaumaturge's Implement Adept, Second Adept and Implement Paragon list your implements, and Kineticist's Gate's Threshold lists your elements
+
 ## 3.12.20
 
 ### Fixed
