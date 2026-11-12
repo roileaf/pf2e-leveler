@@ -495,6 +495,10 @@
         "NAME": "Afficher le bouton de planification",
         "HINT": "Afficher le bouton \"Planifier les niveaux\" sur les feuilles de personnage"
       },
+      "HIDE_SHEET_BUTTONS": {
+        "NAME": "Masquer les boutons de Leveler sur les feuilles de personnage",
+        "HINT": "Masque les boutons de Leveler sur les feuilles de personnage, pour vous uniquement. Vous pouvez toujours ouvrir Leveler avec son raccourci clavier (Maj+L par défaut)."
+      },
       "AUTO_APPLY": {
         "NAME": "Application automatique au gain de niveau",
         "HINT": "Proposer automatiquement l'application des selections planifiees lorsqu'un personnage gagne un niveau"

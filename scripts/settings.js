@@ -50,6 +50,16 @@ export function registerSettings() {
     requiresReload: true,
   });
 
+  game.settings.register(MODULE_ID, 'hideSheetButtons', {
+    name: game.i18n.localize('PF2E_LEVELER.SETTINGS.HIDE_SHEET_BUTTONS.NAME'),
+    hint: game.i18n.localize('PF2E_LEVELER.SETTINGS.HIDE_SHEET_BUTTONS.HINT'),
+    scope: 'client',
+    config: true,
+    type: Boolean,
+    default: false,
+    requiresReload: true,
+  });
+
   game.settings.register(MODULE_ID, 'autoApplyOnLevelUp', {
     name: game.i18n.localize('PF2E_LEVELER.SETTINGS.AUTO_APPLY.NAME'),
     hint: game.i18n.localize('PF2E_LEVELER.SETTINGS.AUTO_APPLY.HINT'),

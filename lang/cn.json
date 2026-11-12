@@ -224,6 +224,10 @@
                 "NAME": "显示规划按钮",
                 "HINT": "在角色卡上显示「等级规划」按钮"
             },
+            "HIDE_SHEET_BUTTONS": {
+                "NAME": "在角色卡上隐藏 Leveler 按钮",
+                "HINT": "仅为你隐藏角色卡上的 Leveler 按钮。你仍可通过快捷键打开 Leveler（默认 Shift+L）。"
+            },
             "AUTO_APPLY": {
                 "NAME": "升级时自动应用",
                 "HINT": "在角色升级时自动弹出提示，应用已规划的选择"

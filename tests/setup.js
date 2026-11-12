@@ -13,6 +13,7 @@ global.game = {
       const defaults = {
         'pf2e-leveler': {
           showPlanButton: true,
+          hideSheetButtons: false,
           autoApplyOnLevelUp: true,
           resetXpOnLevelUp: false,
           allowIncompleteCreation: false,

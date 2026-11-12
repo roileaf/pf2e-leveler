@@ -609,6 +609,10 @@
         "NAME": "Show \"Plan Levels\" on Character Sheets",
         "HINT": "Shows the Plan Levels button on supported character sheets."
       },
+      "HIDE_SHEET_BUTTONS": {
+        "NAME": "Hide Leveler Buttons on Character Sheets",
+        "HINT": "Hides the Leveler buttons on character sheets for you only. You can still open Leveler with its keybinding (Shift+L by default)."
+      },
       "AUTO_APPLY": {
         "NAME": "Prompt to Apply Plan on Level Up",
         "HINT": "When a character's level increases, prompts the user to apply planned selections for the newly gained levels."

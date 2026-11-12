@@ -277,6 +277,32 @@ describe('character sheet render integration', () => {
     }
   });
 
+  test('adds no header buttons when the player hides them for their client', () => {
+    const restoreJQuery = useDomJQuery();
+    const originalSettings = global._testSettings;
+    global._testSettings = { 'pf2e-leveler': { hideSheetButtons: true } };
+    try {
+      const actor = createMockActor({ id: 'abc123' });
+      const app = document.createElement('section');
+      app.id = 'CharacterSheetPF2e-Actor-abc123';
+      app.className = 'application sheet actor character';
+      const header = document.createElement('header');
+      header.className = 'window-header';
+      const content = document.createElement('div');
+      app.append(header, content);
+      document.body.append(app);
+
+      registerSheetIntegration();
+      const renderHandler = Hooks.on.mock.calls.find(([hook]) => hook === 'renderCharacterSheetPF2e')[1];
+      renderHandler({ actor }, content);
+
+      expect(header.querySelector('.pf2e-leveler-create-btn, .pf2e-leveler-plan-btn')).toBeNull();
+    } finally {
+      global._testSettings = originalSettings;
+      restoreJQuery();
+    }
+  });
+
   test('adds compact anchor header controls that avoid themed button chrome', () => {
     const restoreJQuery = useDomJQuery();
     try {

@@ -604,6 +604,10 @@
         "NAME": "„Stufen planen“ auf Charakterbögen anzeigen",
         "HINT": "Zeigt auf unterstützten Charakterbögen die Schaltfläche „Stufen planen“ an."
       },
+      "HIDE_SHEET_BUTTONS": {
+        "NAME": "Leveler-Schaltflächen auf Charakterbögen ausblenden",
+        "HINT": "Blendet die Leveler-Schaltflächen auf Charakterbögen nur für dich aus. Du kannst Leveler weiterhin über die Tastenkombination öffnen (standardmäßig Umschalt+L)."
+      },
       "AUTO_APPLY": {
         "NAME": "Beim Stufenaufstieg zum Anwenden des Plans auffordern",
         "HINT": "Wenn die Stufe eines Charakters steigt, wird der Benutzer aufgefordert, die geplanten Auswahlen für die neu erreichten Stufen anzuwenden."

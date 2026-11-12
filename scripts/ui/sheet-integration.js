@@ -123,7 +123,7 @@ function addCommentBadge(button, actor, scope) {
 }
 
 function onRenderCharacterSheet(sheet, html) {
-  if (!game.settings.get(MODULE_ID, 'showPlanButton')) return;
+  if (!game.settings.get(MODULE_ID, 'showPlanButton') || game.settings.get(MODULE_ID, 'hideSheetButtons')) return;
 
   const actor = sheet.actor;
   if (actor.type !== 'character') return;
