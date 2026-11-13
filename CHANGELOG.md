@@ -1,3 +1,9 @@
+## 3.12.24
+
+### Fixed
+
+- **Kinetic gate choice stuck** - In character creation, a Kineticist's dual gate second element can be cleared or changed again, and switching back to a single gate now works. The same fix stops other cleared class choices (ikons, deity, impulses and similar) from coming back after you remove them or change class
+
 ## 3.12.23
 
 ### Fixed
