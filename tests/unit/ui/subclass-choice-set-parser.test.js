@@ -1,6 +1,6 @@
 import { CharacterWizard } from '../../../scripts/ui/character-wizard/index.js';
 import { buildSkillTrainingChoicesContext, hydrateChoiceSets, parseChoiceSets } from '../../../scripts/ui/character-wizard/choice-sets.js';
-import { toggleKineticImpulse } from '../../../scripts/creation/creation-model.js';
+import { normalizeCreationData, toggleKineticImpulse } from '../../../scripts/creation/creation-model.js';
 import { MIXED_ANCESTRY_UUID, SUBCLASS_TAGS } from '../../../scripts/constants.js';
 
 jest.mock('../../../scripts/creation/creation-store.js', () => ({
@@ -1407,6 +1407,7 @@ describe('CharacterWizard subclass choice-set parsing', () => {
     wizard.data.subclass = { slug: 'earth-gate', uuid: 'earth-uuid', name: 'Earth Gate' };
     wizard.data.kineticGateMode = 'dual-gate';
     wizard.data.secondElement = { slug: 'metal-gate', uuid: 'metal-uuid', name: 'Metal Gate' };
+    normalizeCreationData(wizard.data);
     toggleKineticImpulse(wizard.data, {
       uuid: 'Compendium.pf2e.feats-srd.Item.armor-in-earth',
       name: 'Armor in Earth',
@@ -2685,6 +2686,7 @@ describe('CharacterWizard subclass choice-set parsing', () => {
       uuid: 'Compendium.pf2e.deities.Item.nethys',
       name: 'Nethys',
     };
+    normalizeCreationData(wizard.data);
 
     global.fromUuid = jest.fn(async (uuid) => {
       if (uuid === 'Compendium.pf2e.deities.Item.nethys') {
@@ -2754,6 +2756,7 @@ describe('CharacterWizard subclass choice-set parsing', () => {
       uuid: 'Compendium.pf2e.deities.Item.nethys',
       name: 'Nethys',
     };
+    normalizeCreationData(wizard.data);
     wizard.classHandler = {
       getExtraSteps: () => [
         { id: 'deity', visible: () => true },
@@ -3235,6 +3238,7 @@ describe('CharacterWizard subclass choice-set parsing', () => {
         img: 'icons/svg/item-bag.svg',
       },
     ];
+    normalizeCreationData(wizard.data);
     wizard.actor.items = {
       contents: [
         {
@@ -3390,6 +3394,7 @@ describe('CharacterWizard subclass choice-set parsing', () => {
         img: 'icons/svg/item-bag.svg',
       },
     ];
+    normalizeCreationData(wizard.data);
 
     global.fromUuid = jest.fn(async (uuid) => {
       if (uuid === 'Compendium.pf2e.classfeatures.Item.barrows-edge') {
@@ -5393,6 +5398,7 @@ describe('CharacterWizard subclass choice-set parsing', () => {
         name: 'Seer',
       },
     ];
+    normalizeCreationData(wizard.data);
 
     global.fromUuid = jest.fn(async (uuid) => {
       if (uuid === 'Compendium.pf2e.classfeatures.Item.animist-seer') {

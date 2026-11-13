@@ -1,4 +1,5 @@
 import { KineticistHandler } from '../../../scripts/creation/class-handlers/kineticist.js';
+import { createCreationData, setClass, setKineticGateMode, setSecondElement, setSubclass, toggleKineticImpulse } from '../../../scripts/creation/creation-model.js';
 
 describe('KineticistHandler', () => {
   it('requires two impulses for a single gate', () => {
@@ -75,5 +76,39 @@ describe('KineticistHandler', () => {
     expect(context.secondElementOptions).toEqual([
       { uuid: 'air-uuid', slug: 'air-gate', name: 'Air Gate' },
     ]);
+  });
+});
+
+describe('kinetic gate selections', () => {
+  const EARTH = { uuid: 'earth-uuid', name: 'Earth Gate', img: 'earth.webp', slug: 'earth-gate' };
+
+  function dualGateWithEarth() {
+    const data = createCreationData();
+    setClass(data, { uuid: 'kineticist-uuid', name: 'Kineticist', slug: 'kineticist' });
+    setSubclass(data, { uuid: 'air-uuid', name: 'Air Gate', slug: 'air-gate' });
+    setKineticGateMode(data, 'dual-gate');
+    setSecondElement(data, EARTH);
+    toggleKineticImpulse(data, { uuid: 'impulse-uuid', name: 'Armor in Earth', element: 'earth' });
+    return data;
+  }
+
+  it('clears the second element and impulses when switching back to a single gate', () => {
+    const data = dualGateWithEarth();
+
+    setKineticGateMode(data, 'single-gate');
+
+    expect(data.kineticGateMode).toBe('single-gate');
+    expect(data.secondElement).toBeNull();
+    expect(data.kineticImpulses).toEqual([]);
+    expect(data.classSelections.class.secondElement).toBeNull();
+  });
+
+  it('clears the second element from its clear button', () => {
+    const data = dualGateWithEarth();
+
+    setSecondElement(data, null);
+
+    expect(data.secondElement).toBeNull();
+    expect(data.classSelections.class.secondElement).toBeNull();
   });
 });

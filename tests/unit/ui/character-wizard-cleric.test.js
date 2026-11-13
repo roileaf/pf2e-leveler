@@ -1,5 +1,6 @@
 import { CharacterWizard } from '../../../scripts/ui/character-wizard/index.js';
 import { ClericHandler } from '../../../scripts/creation/class-handlers/cleric.js';
+import { normalizeCreationData } from '../../../scripts/creation/creation-model.js';
 
 describe('CharacterWizard cleric extra steps', () => {
   it('returns divine font options for the divineFont step', async () => {
@@ -16,6 +17,7 @@ describe('CharacterWizard cleric extra steps', () => {
       font: ['healing', 'harmful'],
       sanctification: {},
     };
+    normalizeCreationData(wizard.data);
     wizard.currentStep = 7;
 
     const context = await wizard._getStepContext();

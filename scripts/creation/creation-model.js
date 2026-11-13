@@ -74,16 +74,11 @@ export function ensureClassSelections(data) {
   return data.classSelections;
 }
 
+// Legacy top-level selections are migrated once in normalizeCreationData. Copying them back here
+// would resurrect a selection every time a setter clears it.
 export function getClassSelectionData(data, target = 'class') {
   ensureClassSelections(data);
   data.classSelections[target] ??= createEmptyHandlerSelections();
-  if (target === 'class') {
-    for (const key of HANDLER_SELECTION_KEYS) {
-      if (!isMeaningfulSelectionValue(data.classSelections.class[key]) && isMeaningfulSelectionValue(data[key])) {
-        data.classSelections.class[key] = cloneSelectionValue(data[key]);
-      }
-    }
-  }
   return data.classSelections[target];
 }
 
