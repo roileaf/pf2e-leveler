@@ -362,6 +362,31 @@ describe('ItemPicker', () => {
     expect(picker.element.querySelector('[data-uuid="item-b"] [data-action="selectItem"]').disabled).toBe(true);
   });
 
+  test('excludes items by trait, from a typed -trait or the chip toggle', () => {
+    const picker = new ItemPicker({ name: 'Actor' }, jest.fn(), {
+      items: [
+        { uuid: 'bomb', name: 'Alchemist Fire', type: 'consumable', system: { traits: { rarity: 'common', value: ['alchemical', 'bomb'] }, level: { value: 1 } } },
+        { uuid: 'elixir', name: 'Elixir of Life', type: 'consumable', system: { traits: { rarity: 'common', value: ['alchemical', 'elixir'] }, level: { value: 1 } } },
+      ],
+    });
+    picker._updateList = jest.fn();
+
+    picker._commitTraitInput({ value: 'alchemical' });
+    picker._commitTraitInput({ value: '-bomb' });
+
+    expect([...picker.selectedTraits]).toEqual(['alchemical']);
+    expect([...picker.excludedTraits]).toEqual(['bomb']);
+    expect(picker._filterItems().map((item) => item.uuid)).toEqual(['elixir']);
+    expect(picker._getSelectedTraitChips()).toEqual([
+      { value: 'alchemical', label: 'alchemical', excluded: false },
+      { value: 'bomb', label: 'bomb', excluded: true },
+    ]);
+
+    picker._commitTraitInput({ value: 'bomb' });
+    expect([...picker.excludedTraits]).toEqual([]);
+    expect(picker._filterItems().map((item) => item.uuid)).toEqual(['bomb', 'elixir']);
+  });
+
   test('supports strict formula trait presets for grant picking', () => {
     const picker = new ItemPicker({ name: 'Actor' }, jest.fn(), {
       preset: {

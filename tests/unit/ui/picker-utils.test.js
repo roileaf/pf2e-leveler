@@ -1,5 +1,8 @@
 import {
+  applyExcludedTraitFilter,
+  buildTraitAutocompleteMarkup,
   initializeSelectionSet,
+  parseTraitQuery,
   normalizeItemCategory,
   toggleSelectableChip,
 } from '../../../scripts/ui/shared/picker-utils.js';
@@ -28,5 +31,34 @@ describe('picker utils', () => {
     expect(normalizeItemCategory({ type: 'ammo' })).toBe('ammunition');
     expect(normalizeItemCategory({ type: 'consumable', system: { category: 'ammunition' } })).toBe('ammunition');
     expect(normalizeItemCategory({ type: 'equipment', system: { category: { value: 'ammunition' } } })).toBe('ammunition');
+  });
+
+  test.each([
+    ['skill', { exclude: false, trait: 'skill' }],
+    ['-Skill', { exclude: true, trait: 'skill' }],
+    ['!skill', { exclude: true, trait: 'skill' }],
+    ['  - skill ', { exclude: true, trait: 'skill' }],
+    ['-', { exclude: true, trait: '' }],
+  ])('parses trait query %j', (value, expected) => {
+    expect(parseTraitQuery(value)).toEqual(expected);
+  });
+
+  test('excluded traits drop every entry that has one of them', () => {
+    const entries = [
+      { name: 'Toughness', traits: ['general'] },
+      { name: 'Battle Medicine', traits: ['general', 'Skill'] },
+    ];
+
+    expect(applyExcludedTraitFilter(entries, new Set(['skill']), (entry) => entry.traits)).toEqual([entries[0]]);
+    expect(applyExcludedTraitFilter(entries, new Set(), (entry) => entry.traits)).toEqual(entries);
+  });
+
+  test('autocomplete suggestions keep the exclude prefix so picking one excludes it', () => {
+    const markup = buildTraitAutocompleteMarkup(['skill', 'skirmisher'], '-ski');
+
+    expect(markup).toContain('data-trait="-skill"');
+    expect(markup).toContain('data-trait="-skirmisher"');
+    expect(markup).toContain('<mark>ski</mark>');
+    expect(buildTraitAutocompleteMarkup(['skill'], 'ski')).toContain('data-trait="skill"');
   });
 });

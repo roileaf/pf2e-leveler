@@ -24,7 +24,7 @@
 
       <div class="picker__filter-group picker__filter-group--compact">
         <div class="wizard-trait-input spell-picker__trait-input picker__trait-autocomplete-wrap">
-          <input type="text" class="wizard-trait-input__field" placeholder="{{localize 'PF2E_LEVELER.SPELLS.TRAIT_FILTER'}}" data-action="traitInput" autocomplete="off">
+          <input type="text" class="wizard-trait-input__field" placeholder="{{localize 'PF2E_LEVELER.SPELLS.TRAIT_FILTER'}}" data-tooltip="{{localize 'PF2E_LEVELER.SPELLS.TRAIT_FILTER_HINT'}}" data-action="traitInput" autocomplete="off">
           <button type="button" class="picker__prereq-toggle" data-action="toggleTraitLogic">{{#if (eq traitLogic "and")}}AND{{else}}OR{{/if}}</button>
           <ul class="picker__trait-autocomplete" data-role="trait-autocomplete"></ul>
         </div>
@@ -88,12 +88,6 @@
               <i class="fa-solid fa-filter"></i>
               {{localize "PF2E_LEVELER.FEAT_PICKER.ELIGIBLE_ONLY"}}
             </button>
-            {{#if showGeneralSkillToggle}}
-            <button type="button" class="picker__prereq-toggle {{#if showSkillFeats}}active{{/if}}" data-action="toggleGeneralSkillFeats">
-              <i class="fa-solid fa-screwdriver-wrench"></i>
-              {{localize "PF2E_LEVELER.FEAT_PICKER.SKILL_FEATS"}}
-            </button>
-            {{/if}}
             <button type="button" class="picker__prereq-toggle {{#if remasterOnly}}active{{/if}}" data-action="toggleRemasterOnly">
               <i class="fa-solid fa-rocket"></i>
               {{localize "PF2E_LEVELER.UI.REMASTER_ONLY"}}

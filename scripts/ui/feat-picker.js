@@ -23,7 +23,10 @@ import { openContentGuidanceMenu } from './content-guidance-menu.js';
 import {
   applyRarityFilter,
   applyPublicationFilter,
+  applyExcludedTraitFilter,
   applyTraitFilter,
+  buildTraitAutocompleteMarkup,
+  parseTraitQuery,
   buildChipOptions,
   buildPublicationFilterSectionState,
   getAvailableRarityValues,
@@ -65,7 +68,6 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this.selectedSkills = new Set();
     this.requiredSkills = new Set();
     this.skillLogic = 'or';
-    this.showSkillFeats = false;
     this.minLevel = '';
     this.maxLevel =
       Number.isFinite(Number(targetLevel)) && Number(targetLevel) > 0 ? String(targetLevel) : '';
@@ -187,12 +189,10 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       minLevel: this.minLevel,
       maxLevel: this.maxLevel,
       showSkillFilter: this._showSkillFilter ?? false,
-      showGeneralSkillToggle: false,
       showFeatTypeFilter: featTypeOptions.length > 0,
       skillChips,
       selectedSkillChips: skillChips.filter((o) => o.selected),
       skillLogic: this.skillLogic,
-      showSkillFeats: this.showSkillFeats,
       enforcePrerequisites: this.enforcePrerequisites,
       multiSelect: this.multiSelect,
       isGM: game.user?.isGM === true,
@@ -325,12 +325,10 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       minLevel: this.minLevel,
       maxLevel: this.maxLevel,
       showSkillFilter: false,
-      showGeneralSkillToggle: false,
       showFeatTypeFilter: false,
       skillChips: [],
       selectedSkillChips: [],
       skillLogic: this.skillLogic,
-      showSkillFeats: this.showSkillFeats,
       enforcePrerequisites: this.enforcePrerequisites,
       multiSelect: this.multiSelect,
       isGM: game.user?.isGM === true,
@@ -386,10 +384,12 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this._showSkillFilter && this.selectedSkills.size > 0)
       feats = filterBySkill(feats, [...this.selectedSkills], this.skillLogic);
     if (this.selectedFeatTypes.size > 0) {
-      // Skill feats are a subtype of general feats (they carry the general trait), so a
-      // "general" filter must keep them - selecting general should never exclude skill feats.
+      // Skill feats also carry the general trait, so a general filter keeps them unless the
+      // Skill chip is on offer and switched off.
+      const hideSkillFeats = !this.selectedFeatTypes.has('skill') && this._isFeatTypeOffered('skill');
       feats = feats.filter((feat) => {
         const types = this._getFeatTypes(feat);
+        if (hideSkillFeats && types.includes('skill')) return false;
         return types.some((type) => this.selectedFeatTypes.has(type));
       });
     }
@@ -400,16 +400,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       (feat) => this._getTraitFilterValues(feat),
       this.traitLogic,
     );
-    if (this.excludedTraits.size > 0) {
-      feats = feats.filter((feat) => {
-        const featTraits = new Set(
-          this._getTraitFilterValues(feat).map((trait) => String(trait).toLowerCase()),
-        );
-        return ![...this.excludedTraits].some((trait) =>
-          featTraits.has(String(trait).toLowerCase()),
-        );
-      });
-    }
+    feats = applyExcludedTraitFilter(feats, this.excludedTraits, (feat) => this._getTraitFilterValues(feat));
     if (this.selectedGuidanceTags.size > 0) {
       feats = feats.filter((entry) => matchesGuidanceTagFilter(entry, this.selectedGuidanceTags));
     }
@@ -735,18 +726,6 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
 
     this._bindSkillChipListeners(el, signal);
 
-    const skillFeatToggle = el.querySelector('[data-action="toggleGeneralSkillFeats"]');
-    if (skillFeatToggle) {
-      skillFeatToggle.addEventListener(
-        'click',
-        () => {
-          this.showSkillFeats = !this.showSkillFeats;
-          skillFeatToggle.classList.toggle('active', this.showSkillFeats);
-          this._scheduleListUpdate();
-        },
-        { signal },
-      );
-    }
 
     el.querySelectorAll('[data-action="toggleFeatType"]').forEach((btn) => {
       btn.addEventListener(
@@ -1276,13 +1255,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       defaultValues: [],
     });
 
-    const visibleTypeSet =
-      this.lockedFeatTypes.size > 0
-        ? new Set([...this.lockedFeatTypes, ...(this._extraVisibleFeatTypes ?? [])])
-        : null;
-    const visibleOptions = visibleTypeSet
-      ? allOptions.filter((entry) => visibleTypeSet.has(entry.value))
-      : allOptions;
+    const visibleOptions = allOptions.filter((entry) => this._isFeatTypeOffered(entry.value));
 
     return buildChipOptions(
       visibleOptions.map((entry) => entry.value),
@@ -1292,6 +1265,12 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
         labels: Object.fromEntries(visibleOptions.map((entry) => [entry.value, entry.label])),
       },
     );
+  }
+
+  // A locked slot only offers its locked types plus any extras; an open picker offers every type.
+  _isFeatTypeOffered(type) {
+    if (this.lockedFeatTypes.size === 0) return true;
+    return this.lockedFeatTypes.has(type) || !!this._extraVisibleFeatTypes?.has(type);
   }
 
   _getLevelOptions() {
@@ -1702,12 +1681,15 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _commitTraitInput(input) {
-    const trait = String(input?.value ?? '')
-      .trim()
-      .toLowerCase();
+    const { trait, exclude } = parseTraitQuery(input?.value);
     if (!trait) return;
-    this.selectedTraits.add(trait);
-    this.excludedTraits.delete(trait);
+    if (exclude) {
+      this.excludedTraits.add(trait);
+      this.selectedTraits.delete(trait);
+    } else {
+      this.selectedTraits.add(trait);
+      this.excludedTraits.delete(trait);
+    }
     if (input) input.value = '';
     this._scheduleListUpdate();
   }
@@ -1732,8 +1714,6 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     const hideGunsTechToggle = root.querySelector('[data-action="toggleHideGunsTech"]');
     if (hideGunsTechToggle) hideGunsTechToggle.classList.toggle('active', this.hideGunsTech);
 
-    const skillFeatToggle = root.querySelector('[data-action="toggleGeneralSkillFeats"]');
-    if (skillFeatToggle) skillFeatToggle.classList.toggle('active', this.showSkillFeats);
 
     const skillChipContainer = root.querySelector('[data-role="selected-skill-chips"]');
     if (skillChipContainer) {
@@ -1914,7 +1894,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   _updateAutocomplete(el, query) {
     const dropdown = el.querySelector('[data-role="trait-autocomplete"]');
     if (!dropdown) return;
-    const q = query.trim().toLowerCase();
+    const { trait: q } = parseTraitQuery(query);
     const traits = (this._cachedVisibleTraits ?? [])
       .filter(
         (t) =>
@@ -1927,17 +1907,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       this._closeAutocomplete(el);
       return;
     }
-    dropdown.innerHTML = traits
-      .slice(0, 16)
-      .map((t) => {
-        const idx = t.indexOf(q);
-        const highlighted =
-          q && idx >= 0
-            ? `${t.slice(0, idx)}<mark>${t.slice(idx, idx + q.length)}</mark>${t.slice(idx + q.length)}`
-            : t;
-        return `<li data-trait="${t}">${highlighted}</li>`;
-      })
-      .join('');
+    dropdown.innerHTML = buildTraitAutocompleteMarkup(traits, query, 16);
     dropdown.classList.add('open');
     for (const li of dropdown.querySelectorAll('li')) {
       li.addEventListener(
@@ -2115,7 +2085,6 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       this.traitLogic = preset.traitLogic.toLowerCase() === 'and' ? 'and' : 'or';
     if (Array.isArray(preset.extraVisibleFeatTypes))
       this._extraVisibleFeatTypes = new Set(preset.extraVisibleFeatTypes);
-    if (typeof preset.showSkillFeats === 'boolean') this.showSkillFeats = preset.showSkillFeats;
     if (typeof preset.requiredFeatLimitation === 'boolean')
       this._requiredFeatLimitation = preset.requiredFeatLimitation;
     if (preset.minLevel != null) this.minLevel = String(preset.minLevel);

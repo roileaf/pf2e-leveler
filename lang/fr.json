@@ -192,6 +192,7 @@
       "FILTER_RARITY": "Rarete",
       "SORT": "Tri",
       "TRAIT_FILTER": "Saisissez un trait pour filtrer...",
+      "TRAIT_FILTER_HINT": "Saisissez un trait pour l'inclure, ou commencez par - (par ex. -skill) pour l'exclure",
       "GRANTED": "Sorts accordes",
       "SPELLBOOK": "Grimoire ({selected}/{count} nouveaux sorts)",
       "ADD_TO_SPELLBOOK": "Ajouter au grimoire",

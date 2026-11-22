@@ -396,6 +396,7 @@
             "CATEGORY_FOCUS": "聚能",
             "CATEGORY_RITUAL": "仪式",
             "TRAIT_FILTER": "输入特征以筛选…",
+            "TRAIT_FILTER_HINT": "输入特征以包含，或以 - 开头（如 -skill）以排除",
             "GRANTED": "授予法术",
             "SPELLBOOK": "法术书（{selected}/{count}个新法术）",
             "SPELLBOOK_CANTRIPS": "戏法扩展（{selected}/{count}个额外戏法）",

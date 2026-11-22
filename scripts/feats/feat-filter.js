@@ -202,14 +202,6 @@ function getSkillFeatsByName() {
   return index;
 }
 
-export function filterByGeneralSkillFeats(feats, showSkillFeats) {
-  if (showSkillFeats) return feats;
-  return feats.filter((feat) => {
-    const traits = (feat.system.traits?.value ?? []).map((trait) => String(trait).toLowerCase());
-    return traits.includes('general') && !traits.includes('skill');
-  });
-}
-
 export function filterByArchetypeRestrictions(feats, actor, buildState) {
   const classSlug = String(buildState?.classSlug ?? buildState?.class?.slug ?? actor?.class?.slug ?? '').toLowerCase();
   const existingClassArchetypeDedications = buildState?.classArchetypeDedications ?? new Set();

@@ -2548,7 +2548,6 @@ export class LevelPlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           selectedFeatTypes: ['general', 'skill'],
           lockedFeatTypes: ['general'],
           extraVisibleFeatTypes: ['skill'],
-          showSkillFeats: true,
           maxLevel: level,
         };
       case 'ancestryFeats':

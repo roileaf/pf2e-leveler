@@ -8,8 +8,11 @@ import { createSpellFilters, matchesSpellFilters } from './shared/spell-filters.
 import {
   applyRarityFilter,
   applyPublicationFilter,
+  applyExcludedTraitFilter,
   applyTraitFilter,
   buildChipOptions,
+  buildTraitAutocompleteMarkup,
+  parseTraitQuery,
   buildPublicationFilterSectionState,
   getAvailableRarityValues,
   initializeSelectionSet,
@@ -263,10 +266,9 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
         e.preventDefault();
         const highlighted = dropdown?.querySelector('.highlighted');
         if (highlighted) traitInput.value = highlighted.dataset.trait;
-        const trait = traitInput.value.trim().toLowerCase();
-        if (!trait) return;
+        if (!parseTraitQuery(traitInput.value).trait) return;
+        this._addTraitFilter(traitInput.value);
         traitInput.value = '';
-        this._addTraitFilter(trait);
         this._closeAutocomplete(el);
         this._scheduleListUpdate();
         return;
@@ -679,12 +681,7 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       spells = spells.filter((spell) => this.selectedCategories.has(normalizeSpellCategory(spell)));
     }
     spells = applyTraitFilter(spells, this.selectedTraits, (spell) => spell.system?.traits?.value ?? [], this.traitLogic);
-    if (this.excludedTraits.size > 0) {
-      spells = spells.filter((spell) => {
-        const traits = new Set((spell.system?.traits?.value ?? []).map((trait) => String(trait).toLowerCase()));
-        return [...this.excludedTraits].every((trait) => !traits.has(trait));
-      });
-    }
+    spells = applyExcludedTraitFilter(spells, this.excludedTraits, (spell) => spell.system?.traits?.value ?? []);
     if (this.remasterOnly) spells = spells.filter((spell) => isRemasterItem(spell));
     if (this.hideGunsTech) spells = spells.filter((spell) => !itemHasExcludedTechTrait(spell));
     if (this.searchText) spells = spells.filter((s) => (s._levelerSearchName ?? s.name.toLowerCase()).includes(this.searchText));
@@ -1290,10 +1287,10 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (typeof preset.traitFilterMode === 'string') this.traitFilterMode = preset.traitFilterMode.toLowerCase() === 'exclude' ? 'exclude' : 'include';
   }
 
-  _addTraitFilter(trait) {
-    const normalized = String(trait ?? '').trim().toLowerCase();
+  _addTraitFilter(value) {
+    const { trait: normalized, exclude } = parseTraitQuery(value);
     if (!normalized) return;
-    if (this.traitFilterMode === 'exclude') {
+    if (exclude || this.traitFilterMode === 'exclude') {
       this.selectedTraits.delete(normalized);
       this.excludedTraits.add(normalized);
       return;
@@ -1305,18 +1302,12 @@ export class SpellPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   _updateAutocomplete(el, query) {
     const dropdown = el.querySelector('[data-role="trait-autocomplete"]');
     if (!dropdown) return;
-    const q = query.trim().toLowerCase();
+    const { trait: q } = parseTraitQuery(query);
     if (!q) { this._closeAutocomplete(el); return; }
     const traits = (this._allTraitOptions ?? [])
       .filter((t) => t.includes(q) && !this.selectedTraits.has(t) && !this.excludedTraits.has(t));
     if (traits.length === 0) { this._closeAutocomplete(el); return; }
-    dropdown.innerHTML = traits.slice(0, 15).map((t) => {
-      const idx = t.indexOf(q);
-      const highlighted = idx >= 0
-        ? `${t.slice(0, idx)}<mark>${t.slice(idx, idx + q.length)}</mark>${t.slice(idx + q.length)}`
-        : t;
-      return `<li data-trait="${t}">${highlighted}</li>`;
-    }).join('');
+    dropdown.innerHTML = buildTraitAutocompleteMarkup(traits, query);
     dropdown.classList.add('open');
     for (const li of dropdown.querySelectorAll('li')) {
       li.addEventListener('mousedown', (e) => {

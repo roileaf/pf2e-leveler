@@ -37,19 +37,24 @@
 
       <div class="picker__filter-group picker__filter-group--compact">
         <div class="wizard-trait-input spell-picker__trait-input picker__trait-autocomplete-wrap">
-          <input type="text" class="wizard-trait-input__field" placeholder="{{localize 'PF2E_LEVELER.SPELLS.TRAIT_FILTER'}}" data-action="traitInput" autocomplete="off">
+          <input type="text" class="wizard-trait-input__field" placeholder="{{localize 'PF2E_LEVELER.SPELLS.TRAIT_FILTER'}}" data-tooltip="{{localize 'PF2E_LEVELER.SPELLS.TRAIT_FILTER_HINT'}}" data-action="traitInput" autocomplete="off">
           <button type="button" class="picker__prereq-toggle" data-action="toggleTraitLogic">{{#if (eq traitLogic "and")}}AND{{else}}OR{{/if}}</button>
           <ul class="picker__trait-autocomplete" data-role="trait-autocomplete"></ul>
         </div>
         <div class="picker__source-list picker__source-list--compact" data-role="selected-trait-chips" {{#unless selectedTraitChips.length}}style="display:none"{{/unless}}>
           {{#each selectedTraitChips}}
-          <button type="button"
-            class="picker__source-chip {{#if this.selected}}selected{{/if}}"
-            data-action="toggleTraitChip"
-            data-trait="{{this.value}}">
+          <div class="picker__source-chip picker__source-chip--trait {{#if this.excluded}}excluded{{else}}selected{{/if}}" data-trait="{{this.value}}">
             <span>{{this.label}}</span>
-            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-          </button>
+            <span class="picker__chip-actions">
+              <button type="button" class="picker__chip-action" data-action="toggleTraitExclude" data-trait="{{this.value}}"
+                data-tooltip="{{#if this.excluded}}{{localize 'PF2E_LEVELER.FEAT_PICKER.TRAIT_INCLUDE'}}{{else}}{{localize 'PF2E_LEVELER.FEAT_PICKER.TRAIT_EXCLUDE'}}{{/if}}">
+                <i class="fa-solid {{#if this.excluded}}fa-circle-check{{else}}fa-ban{{/if}}" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="picker__chip-action" data-action="removeTraitChip" data-trait="{{this.value}}" data-tooltip="{{localize 'PF2E_LEVELER.FEAT_PICKER.TRAIT_REMOVE'}}">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+            </span>
+          </div>
           {{/each}}
         </div>
       </div>

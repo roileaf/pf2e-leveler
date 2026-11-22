@@ -234,6 +234,7 @@
       "FILTER_RARITY": "Rarity",
       "SORT": "Sort",
       "TRAIT_FILTER": "Type trait to filter...",
+      "TRAIT_FILTER_HINT": "Type a trait to include it, or start with - (like -skill) to exclude it",
       "GRANTED": "Granted Spells",
       "SPELLBOOK": "Spellbook ({selected}/{count} new spells)",
       "SPELLBOOK_CANTRIPS": "Cantrip Expansion ({selected}/{count} extra cantrips)",

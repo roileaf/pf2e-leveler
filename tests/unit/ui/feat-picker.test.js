@@ -398,7 +398,7 @@ describe('FeatPicker prerequisite enforcement', () => {
     const template = fs.readFileSync(path.join(process.cwd(), 'templates/feat-picker.hbs'), 'utf8');
 
     expect(template).not.toContain('PF2E_LEVELER.CREATION.SEARCH');
-    expect(template.match(/PF2E_LEVELER\.SPELLS\.TRAIT_FILTER/g)).toHaveLength(1);
+    expect(template.match(/PF2E_LEVELER\.SPELLS\.TRAIT_FILTER\b/g)).toHaveLength(1);
     expect(template.match(/PF2E_LEVELER\.FEAT_PICKER\.SKILL_FILTER/g)).toHaveLength(1);
     expect(template).toContain('picker__filter-group--compact');
     expect(template).toContain('picker__filter-group--utility');
@@ -1050,6 +1050,45 @@ describe('FeatPicker prerequisite enforcement', () => {
     ]);
   });
 
+  describe('general feat slot skill chip', () => {
+    function generalSlotPicker(preset) {
+      const toughness = createFeat({ name: 'Toughness', uuid: 'toughness', slug: 'toughness' });
+      toughness.system.traits.value = ['general'];
+      const battleMedicine = createFeat({ name: 'Battle Medicine', uuid: 'battle-medicine', slug: 'battle-medicine' });
+      battleMedicine.system.traits.value = ['general', 'healing', 'skill'];
+      const picker = new FeatPicker(createActor(), 'general', 3, createBuildState(), jest.fn(), { preset });
+      picker.allFeats = [toughness, battleMedicine];
+      return picker;
+    }
+
+    const GENERAL_SLOT = {
+      selectedFeatTypes: ['general', 'skill'],
+      lockedFeatTypes: ['general'],
+      extraVisibleFeatTypes: ['skill'],
+    };
+
+    test('lists skill feats while the Skill chip is on', () => {
+      expect(generalSlotPicker(GENERAL_SLOT)._applyFilters().map((entry) => entry.name)).toEqual(
+        expect.arrayContaining(['Toughness', 'Battle Medicine']),
+      );
+    });
+
+    test('hides skill feats when the Skill chip is switched off', () => {
+      const picker = generalSlotPicker(GENERAL_SLOT);
+      picker.selectedFeatTypes.delete('skill');
+
+      expect(picker._applyFilters().map((entry) => entry.name)).toEqual(['Toughness']);
+    });
+
+    test('keeps skill feats for a general-only slot that does not offer the Skill chip', () => {
+      const picker = generalSlotPicker({ selectedFeatTypes: ['general'], lockedFeatTypes: ['general'] });
+
+      expect(picker._applyFilters().map((entry) => entry.name)).toEqual(
+        expect.arrayContaining(['Toughness', 'Battle Medicine']),
+      );
+    });
+  });
+
   test('locked trait chips can still toggle between included and excluded states', () => {
     const picker = new FeatPicker(createActor(), 'custom', 2, createBuildState(), jest.fn(), {
       preset: {
@@ -1290,7 +1329,6 @@ describe('FeatPicker prerequisite enforcement', () => {
       jest.fn(),
     );
     picker.allFeats = [feat];
-    picker.showSkillFeats = true;
     picker.additionalArchetypeFeatLevels = new Map([['trap-finder', 4]]);
 
     const [result] = picker._applyFilters();
@@ -2600,7 +2638,7 @@ describe('FeatPicker prerequisite enforcement', () => {
     ]);
   });
 
-  test('selecting the general feat type keeps skill feats (skill feats are general feats)', () => {
+  test('an open picker shows skill feats with General only when Skill is also selected', () => {
     const generalFeat = createFeat({ name: 'Fleet', uuid: 'fleet', slug: 'fleet', level: 1 });
     generalFeat.system.traits.value = ['general'];
 
@@ -2613,11 +2651,11 @@ describe('FeatPicker prerequisite enforcement', () => {
     const picker = new FeatPicker(createActor(), 'general', 1, createBuildState({ level: 1 }), jest.fn());
     picker.allFeats = [generalFeat, skillFeat, classFeat];
     picker.selectedFeatTypes = new Set(['general']);
+    expect(picker._applyFilters().map((entry) => entry.name)).toEqual(['Fleet']);
 
+    picker.selectedFeatTypes = new Set(['general', 'skill']);
     const names = picker._applyFilters().map((entry) => entry.name);
-
-    expect(names).toContain('Fleet');
-    expect(names).toContain('Cat Fall');
+    expect(names).toEqual(expect.arrayContaining(['Fleet', 'Cat Fall']));
     expect(names).not.toContain('Power Attack');
   });
 });

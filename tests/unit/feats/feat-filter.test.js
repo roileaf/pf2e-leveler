@@ -3,7 +3,6 @@ import {
   collectAdditionalArchetypeFeatLevels,
   filterFeatsByCategory,
   filterByArchetypeRestrictions,
-  filterByGeneralSkillFeats,
   getFeatsForSelection,
   filterBySearch,
   filterBySkill,
@@ -800,20 +799,6 @@ describe('dedication and skill filters', () => {
     expect(result).toEqual([
       expect.objectContaining({ name: 'Arcane Sense' }),
     ]);
-  });
-
-  test('filterByGeneralSkillFeats hides skill feats when disabled', () => {
-    const feats = [
-      makeFeat('Toughness', 1, ['general']),
-      makeFeat('Battle Medicine', 1, ['general', 'skill']),
-      makeFeat('Arcane Sense', 1, ['skill']),
-    ];
-
-    expect(filterByGeneralSkillFeats(feats, false)).toEqual([
-      expect.objectContaining({ name: 'Toughness' }),
-    ]);
-
-    expect(filterByGeneralSkillFeats(feats, true)).toEqual(feats);
   });
 
   test('filterByArchetypeRestrictions blocks same-class dedications', () => {

@@ -67,6 +67,39 @@ export function applyTraitFilter(entries, selectedTraits, getTraits, logic = 'or
   });
 }
 
+export function applyExcludedTraitFilter(entries, excludedTraits, getTraits) {
+  const excluded = [...(excludedTraits ?? [])].map((trait) => String(trait).toLowerCase()).filter(Boolean);
+  if (excluded.length === 0) return [...entries];
+
+  return (entries ?? []).filter((entry) => {
+    const entryTraits = new Set((getTraits(entry) ?? []).map((trait) => String(trait).toLowerCase()));
+    return !excluded.some((trait) => entryTraits.has(trait));
+  });
+}
+
+// "-skill" or "!skill" in a trait box means "exclude skill".
+export function parseTraitQuery(value) {
+  const text = String(value ?? '').trim().toLowerCase();
+  const exclude = /^[-!]/.test(text);
+  return { exclude, trait: text.replace(/^[-!]+/, '').trim() };
+}
+
+export function buildTraitAutocompleteMarkup(traits, query, limit = 15) {
+  const { exclude, trait: q } = parseTraitQuery(query);
+  const prefix = exclude ? '-' : '';
+  return (traits ?? [])
+    .slice(0, limit)
+    .map((trait) => {
+      const idx = q ? trait.indexOf(q) : -1;
+      const label = idx >= 0
+        ? `${trait.slice(0, idx)}<mark>${trait.slice(idx, idx + q.length)}</mark>${trait.slice(idx + q.length)}`
+        : trait;
+      const icon = exclude ? '<i class="fa-solid fa-ban" aria-hidden="true"></i> ' : '';
+      return `<li data-trait="${prefix}${trait}">${icon}${label}</li>`;
+    })
+    .join('');
+}
+
 export function applyRarityFilter(entries, selectedRarities, getRarity, availableValues = ['common', 'uncommon', 'rare', 'unique']) {
   if (isUnrestrictedSelection(selectedRarities, availableValues)) return [...entries];
   return (entries ?? []).filter((entry) => selectedRarities.has(String(getRarity(entry) ?? 'common').toLowerCase()));

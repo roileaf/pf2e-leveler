@@ -233,6 +233,7 @@
       "FILTER_RARITY": "Seltenheit",
       "SORT": "Sortieren",
       "TRAIT_FILTER": "Kategorie zum Filtern eingeben …",
+      "TRAIT_FILTER_HINT": "Kategorie eingeben, um sie einzuschließen, oder mit - beginnen (z. B. -skill), um sie auszuschließen",
       "GRANTED": "Verliehene Zauber",
       "SPELLBOOK": "Zauberbuch ({selected}/{count} neue Zauber)",
       "SPELLBOOK_CANTRIPS": "Erweiterung der Zaubertricks ({selected}/{count} zusätzliche Zaubertricks)",

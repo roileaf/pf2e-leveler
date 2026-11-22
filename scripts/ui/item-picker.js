@@ -8,8 +8,11 @@ import {
   applyRarityFilter,
   applySourceFilter,
   applyPublicationFilter,
+  applyExcludedTraitFilter,
   applyTraitFilter,
   buildChipOptions,
+  buildTraitAutocompleteMarkup,
+  parseTraitQuery,
   buildFilterSectionState,
   buildPublicationFilterSectionState,
   getAvailableRarityValues,
@@ -18,6 +21,22 @@ import {
   normalizeItemCategory,
   toggleSelectableChip,
 } from './shared/picker-utils.js';
+
+function renderTraitChip({ value, label, excluded }) {
+  const toggleKey = excluded ? 'PF2E_LEVELER.FEAT_PICKER.TRAIT_INCLUDE' : 'PF2E_LEVELER.FEAT_PICKER.TRAIT_EXCLUDE';
+  return `
+    <div class="picker__source-chip picker__source-chip--trait ${excluded ? 'excluded' : 'selected'}" data-trait="${value}">
+      <span>${label}</span>
+      <span class="picker__chip-actions">
+        <button type="button" class="picker__chip-action" data-action="toggleTraitExclude" data-trait="${value}" data-tooltip="${game.i18n.localize(toggleKey)}">
+          <i class="fa-solid ${excluded ? 'fa-circle-check' : 'fa-ban'}" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="picker__chip-action" data-action="removeTraitChip" data-trait="${value}" data-tooltip="${game.i18n.localize('PF2E_LEVELER.FEAT_PICKER.TRAIT_REMOVE')}">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </span>
+    </div>`;
+}
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const renderHandlebarsTemplate = foundry.applications?.handlebars?.renderTemplate ?? globalThis.renderTemplate;
@@ -94,6 +113,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this.lockedRarities = new Set();
     this.selectedGuidanceTags = new Set();
     this.selectedTraits = new Set();
+    this.excludedTraits = new Set();
     this.requiredTraits = new Set();
     this.selectedArmorFilters = new Set();
     this.selectedWeaponFilters = new Set();
@@ -189,7 +209,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
         { labels: getGuidanceTagLabels() },
       ),
       traitOptions: this._getTraitOptions(),
-      selectedTraitChips: this._getTraitOptions().filter((o) => o.selected),
+      selectedTraitChips: this._getSelectedTraitChips(),
       traitLogic: this.traitLogic,
       armorFilterLogic: this.armorFilterLogic,
       weaponFilterLogic: this.weaponFilterLogic,
@@ -261,6 +281,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.requiredTraits.size > 0) {
       items = applyTraitFilter(items, this.requiredTraits, (item) => item.system?.traits?.value ?? [], 'and');
     }
+    items = applyExcludedTraitFilter(items, this.excludedTraits, (item) => item.system?.traits?.value ?? []);
     if (this._shouldApplyEquipmentFilters('armor')) {
       items = items.filter((item) => this._matchesEquipmentFilters(item, 'armor'));
     }
@@ -306,6 +327,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.searchText) return true;
     if (this.maxLevel !== '') return true;
     if (this.selectedTraits.size > 0) return true;
+    if (this.excludedTraits.size > 0) return true;
     if (this.requiredTraits.size > 0) return true;
     if (this._shouldApplyEquipmentFilters('armor') && !this._armorFilterValues.every((v) => this.selectedArmorFilters.has(v))) return true;
     if (this._shouldApplyEquipmentFilters('weapon') && !this._weaponFilterValues.every((v) => this.selectedWeaponFilters.has(v))) return true;
@@ -440,13 +462,28 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       for (const trait of (item.system?.traits?.value ?? [])) traits.add(String(trait).toLowerCase());
     }
     for (const trait of this.selectedTraits) traits.add(trait);
+    for (const trait of this.excludedTraits) traits.add(trait);
     return [...traits].sort((a, b) => a.localeCompare(b));
   }
 
+  _getSelectedTraitChips() {
+    return [
+      ...[...this.selectedTraits].map((value) => ({ value, label: value, excluded: false })),
+      ...[...this.excludedTraits].map((value) => ({ value, label: value, excluded: true })),
+    ];
+  }
+
   _commitTraitInput(input) {
-    const trait = String(input?.value ?? '').trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '');
+    const { trait: rawTrait, exclude } = parseTraitQuery(input?.value);
+    const trait = rawTrait.replace(/[^a-z0-9\s-]/g, '');
     if (!trait) return;
-    this.selectedTraits.add(trait);
+    if (exclude) {
+      this.excludedTraits.add(trait);
+      this.selectedTraits.delete(trait);
+    } else {
+      this.selectedTraits.add(trait);
+      this.excludedTraits.delete(trait);
+    }
     if (input) input.value = '';
     this._updateList();
   }
@@ -454,18 +491,12 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   _updateAutocomplete(el, query) {
     const dropdown = el.querySelector('[data-role="trait-autocomplete"]');
     if (!dropdown) return;
-    const q = query.trim().toLowerCase();
+    const { trait: q } = parseTraitQuery(query);
     if (!q) { this._closeAutocomplete(el); return; }
     const traits = (this._cachedVisibleTraits ?? [])
-      .filter((t) => t.includes(q) && !this.selectedTraits.has(t));
+      .filter((t) => t.includes(q) && !this.selectedTraits.has(t) && !this.excludedTraits.has(t));
     if (traits.length === 0) { this._closeAutocomplete(el); return; }
-    dropdown.innerHTML = traits.slice(0, 15).map((t) => {
-      const idx = t.indexOf(q);
-      const highlighted = idx >= 0
-        ? `${t.slice(0, idx)}<mark>${t.slice(idx, idx + q.length)}</mark>${t.slice(idx + q.length)}`
-        : t;
-      return `<li data-trait="${t}">${highlighted}</li>`;
-    }).join('');
+    dropdown.innerHTML = buildTraitAutocompleteMarkup(traits, query);
     dropdown.classList.add('open');
     for (const li of dropdown.querySelectorAll('li')) {
       li.addEventListener('mousedown', (e) => {
@@ -495,12 +526,23 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _bindTraitChipListeners(root, signal) {
-    root.querySelectorAll('[data-action="toggleTraitChip"]').forEach((btn) => {
+    root.querySelectorAll('[data-action="toggleTraitExclude"]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const trait = String(btn.dataset.trait ?? '').trim().toLowerCase();
         if (!trait) return;
-        if (this.selectedTraits.has(trait)) this.selectedTraits.delete(trait);
-        else this.selectedTraits.add(trait);
+        if (this.excludedTraits.delete(trait)) this.selectedTraits.add(trait);
+        else {
+          this.selectedTraits.delete(trait);
+          this.excludedTraits.add(trait);
+        }
+        this._updateList();
+      }, { signal });
+    });
+    root.querySelectorAll('[data-action="removeTraitChip"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const trait = String(btn.dataset.trait ?? '').trim().toLowerCase();
+        this.selectedTraits.delete(trait);
+        this.excludedTraits.delete(trait);
         this._updateList();
       }, { signal });
     });
@@ -570,14 +612,9 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const traitChipContainer = root?.querySelector('[data-role="selected-trait-chips"]');
     if (traitChipContainer) {
-      const selectedChips = this._getTraitOptions().filter((o) => o.selected);
+      const selectedChips = this._getSelectedTraitChips();
       traitChipContainer.style.display = selectedChips.length > 0 ? '' : 'none';
-      traitChipContainer.innerHTML = selectedChips.map((chip) => `
-        <button type="button" class="picker__source-chip selected" data-action="toggleTraitChip" data-trait="${chip.value}">
-          <span>${chip.label}</span>
-          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-        </button>
-      `).join('');
+      traitChipContainer.innerHTML = selectedChips.map((chip) => renderTraitChip(chip)).join('');
       if (this._domListeners?.signal) this._bindTraitChipListeners(root, this._domListeners.signal);
     }
 
@@ -958,6 +995,7 @@ export class ItemPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (Array.isArray(preset.selectedRarities)) this.selectedRarities = new Set(preset.selectedRarities.map((value) => String(value).toLowerCase()));
     if (Array.isArray(preset.lockedRarities)) this.lockedRarities = new Set(preset.lockedRarities.map((value) => String(value).toLowerCase()));
     if (Array.isArray(preset.selectedTraits)) this.selectedTraits = new Set(preset.selectedTraits.map((value) => String(value).toLowerCase()));
+    if (Array.isArray(preset.excludedTraits)) this.excludedTraits = new Set(preset.excludedTraits.map((value) => String(value).toLowerCase()));
     if (Array.isArray(preset.requiredTraits)) this.requiredTraits = new Set(preset.requiredTraits.map((value) => String(value).toLowerCase()));
     if (typeof preset.traitLogic === 'string') this.traitLogic = preset.traitLogic.toLowerCase() === 'and' ? 'and' : 'or';
     if (preset.maxLevelCap != null && Number.isFinite(Number(preset.maxLevelCap))) this.maxLevelCap = Math.max(0, Number(preset.maxLevelCap));
