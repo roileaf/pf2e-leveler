@@ -1,3 +1,14 @@
+## 3.12.25
+
+### Added
+
+- **Exclude traits by typing** - In the feat, spell and item pickers, type a trait with a leading `-` (like `-skill` or `-bomb`) to exclude it. `!skill` works too. Excluded chips can be flipped to include with the ⊘ button or removed with ×
+- **Item picker trait exclusion** - The item picker now supports excluded traits, with the same chip buttons as the feat picker
+
+### Changed
+
+- **Skill feats in general feat slots** - General feat slots now offer a Skill chip that starts off, so the list shows plain general feats. Turn Skill on to see skill feats as well. This replaces the old "show skill feats" toggle
+
 ## 3.12.24
 
 ### Fixed
