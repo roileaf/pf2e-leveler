@@ -1,3 +1,9 @@
+## 3.12.26
+
+### Fixed
+
+- **SF2e Ysoki ancestry feats** - Ysoki characters in Starfinder 2e now see their ancestry feats. The Ysoki ancestry and its feats use the ratfolk trait, which the feat picker didn't connect to Ysoki
+
 ## 3.12.25
 
 ### Added
