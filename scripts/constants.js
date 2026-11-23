@@ -103,6 +103,9 @@ export const ANCESTRY_TRAIT_ALIASES = {
   'half-orc': ['half-orc', 'orc', 'dromaar'],
   aiuvarin: ['aiuvarin', 'elf'],
   'half-elf': ['half-elf', 'elf', 'aiuvarin'],
+  // SF2e's Ysoki ancestry and its feats use the ratfolk trait.
+  ysoki: ['ysoki', 'ratfolk'],
+  ratfolk: ['ratfolk', 'ysoki'],
 };
 
 export const SPELLBOOK_CLASSES = ['wizard', 'witch', 'magus', 'necromancer', 'technomancer'];

@@ -1114,6 +1114,22 @@ describe('computeBuildState', () => {
     expect(state.ancestryFeatTraits.has('plant')).toBe(false);
   });
 
+  test('gives SF2e ysoki access to feats with the ratfolk trait', () => {
+    mockActor.ancestry = {
+      slug: 'ysoki',
+      name: 'Ysoki',
+      system: { traits: { value: ['humanoid', 'ratfolk'] } },
+    };
+    mockActor.system.details.ancestry = { trait: null };
+    mockActor.system.traits = { value: ['humanoid', 'ratfolk'] };
+
+    const state = computeBuildState(mockActor, plan, 1);
+
+    expect(state.ancestryFeatTraits.has('ysoki')).toBe(true);
+    expect(state.ancestryFeatTraits.has('ratfolk')).toBe(true);
+    expect(state.ancestryFeatTraits.has('humanoid')).toBe(false);
+  });
+
   test('includes focus-pool in feats when actor has focus pool', () => {
     mockActor.system.resources = { focus: { max: 1, value: 1 } };
     const state = computeBuildState(mockActor, plan, 2);
