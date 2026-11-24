@@ -1,3 +1,8 @@
+## 3.12.32
+
+- Fixed Lashunta in SF2e: the character wizard no longer shows five attribute flaws, and the free ancestry boost is no longer lost when the character is created.
+- SF2e heritages that change ancestry attribute boosts and flaws now apply in the character wizard and on creation: Damaya and Korasha Lashunta, Junker Goblin, Fierce Ysoki, Deep Space Hryngar, Squentu, Yeulentu, and the Electronica, Biotech and Hellforged Android heritages. Where the heritage says so, the free ancestry boost can't pick the same attribute (for example, Damaya's free boost can't be Intelligence).
+
 ## 3.12.31
 
 - Fixed Starfinder 2e starting wealth (Items + Currency) not charging for the chosen equipment, which gave characters their gear plus the full starting budget. SF2e prices in credits are now counted, and the item picker shows them.
