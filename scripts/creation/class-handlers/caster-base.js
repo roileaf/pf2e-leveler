@@ -1,9 +1,8 @@
-import { SPELLBOOK_CLASSES } from '../../constants.js';
 import { BaseClassHandler } from './base.js';
 import { resolveSpellcastingTradition, resolveSubclassSpells } from '../../data/subclass-spells.js';
 import { ClassRegistry } from '../../classes/registry.js';
 import { capitalize } from '../../utils/pf2e-api.js';
-import { classUsesPhysicalSpellbook, ensureActorHasSpellbook } from '../../utils/spellcasting-support.js';
+import { classUsesPhysicalSpellbook, ensureActorHasSpellbook, preparesFromTraditionList } from '../../utils/spellcasting-support.js';
 import { findMagusPrimaryEntry, isRemasteredMagus } from '../../utils/magus-spellcasting.js';
 import { refillFocusPool } from '../../utils/focus-pool.js';
 import { supportsFlexiblePreparation, getFlexibleSpellSlots, findClassSpellcastingEntry, ensureFlexibleRank10Entry } from '../../utils/flexible-spellcasting.js';
@@ -19,8 +18,7 @@ const MAGUS_STUDIOUS_ENTRY_FLAG = 'magusStudiousEntry';
 export class CasterBaseHandler extends BaseClassHandler {
   needsSpellSelection(data, classDef) {
     if (data.subclass?.spellUuids?.length > 0) return true;
-    if (!classDef?.spellcasting) return false;
-    return classDef.spellcasting.type === 'spontaneous' || SPELLBOOK_CLASSES.includes(classDef.slug);
+    return !!classDef?.spellcasting;
   }
 
   isSpellsComplete(data, maxCantrips, maxRank1) {
@@ -230,6 +228,7 @@ export class CasterBaseHandler extends BaseClassHandler {
     }
 
     const preparedIds = { 0: [], 1: [] };
+    const preparesEverySpell = preparesFromTraditionList(classDef);
     for (const spellEntry of allSpells) {
       const spell = await fromUuid(spellEntry.uuid).catch(() => null);
       if (!spell) continue;
@@ -240,7 +239,7 @@ export class CasterBaseHandler extends BaseClassHandler {
       const spellData = foundry.utils.deepClone(spell.toObject());
       spellData.system.location = { value: entry.id };
       const [created] = await actor.createEmbeddedDocuments('Item', [spellData]) ?? [];
-      if (spellEntry.prepared && created?.id) preparedIds[traits.includes('cantrip') ? 0 : 1].push(created.id);
+      if ((spellEntry.prepared || preparesEverySpell) && created?.id) preparedIds[traits.includes('cantrip') ? 0 : 1].push(created.id);
     }
 
     if (prepared === 'prepared') {

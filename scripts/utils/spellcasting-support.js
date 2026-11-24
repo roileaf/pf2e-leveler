@@ -1,4 +1,5 @@
 import { ClassRegistry } from '../classes/registry.js';
+import { SPELLBOOK_CLASSES } from '../constants.js';
 import { capitalize } from './pf2e-api.js';
 import { getCompendiumPacksForCategory } from '../system-support/profiles.js';
 
@@ -20,6 +21,12 @@ export const FEAT_SPELLCASTING_METADATA_VERSION = 1;
 export function classUsesPhysicalSpellbook(classSlug) {
   const normalized = String(classSlug ?? '').trim().toLowerCase();
   return normalized === 'wizard' || normalized === 'magus';
+}
+
+// Prepared casters without a spellbook (cleric, druid) prepare straight from their tradition's list,
+// so every spell they pick at creation fills a slot.
+export function preparesFromTraditionList(classDef) {
+  return classDef?.spellcasting?.type === 'prepared' && !SPELLBOOK_CLASSES.includes(classDef.slug);
 }
 
 export function getSpellcastingClassSlugs() {

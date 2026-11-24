@@ -148,6 +148,39 @@ describe('CasterBaseHandler._applySpellcasting', () => {
     expect(actor.createEmbeddedDocuments).toHaveBeenCalledTimes(3);
   });
 
+  it('prepares every spell a tradition-list caster picks in creation', async () => {
+    let nextId = 0;
+    const actor = {
+      items: [],
+      createEmbeddedDocuments: jest.fn(async (_type, docs) => docs.map((doc) => ({ id: doc.type === 'spellcastingEntry' ? 'entry-1' : `spell-${nextId++}`, ...doc }))),
+      updateEmbeddedDocuments: jest.fn(async () => []),
+    };
+
+    await new CasterBaseHandler()._applySpellcasting(actor, {
+      class: { slug: 'druid', name: 'Druid' },
+      subclass: null,
+      spells: {
+        cantrips: [{ uuid: 'Compendium.pf2e.spells-srd.Item.tangle-vine' }],
+        rank1: [{ uuid: 'Compendium.pf2e.spells-srd.Item.heal-animal' }, { uuid: 'Compendium.pf2e.spells-srd.Item.fear' }],
+      },
+    });
+
+    const preparedUpdate = actor.updateEmbeddedDocuments.mock.calls.at(-1)[1][0];
+    expect(preparedUpdate['system.slots.slot0.prepared'][0]).toEqual({ id: 'spell-0', expended: false });
+    expect(preparedUpdate['system.slots.slot1.prepared']).toEqual([
+      { id: 'spell-1', expended: false },
+      { id: 'spell-2', expended: false },
+    ]);
+  });
+
+  it.each(['druid', 'magus', 'sorcerer', 'psychic'])('shows the creation spell step for %s', (slug) => {
+    expect(new CasterBaseHandler().needsSpellSelection({}, ClassRegistry.get(slug))).toBe(true);
+  });
+
+  it('skips the creation spell step for classes without spellcasting', () => {
+    expect(new CasterBaseHandler().needsSpellSelection({}, { slug: 'fighter' })).toBe(false);
+  });
+
   it('fills daily prepared slots with spells marked prepared in creation', async () => {
     let nextId = 0;
     const actor = {

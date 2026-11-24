@@ -3,6 +3,7 @@ import { getClassHandler } from '../../creation/class-handlers/registry.js';
 import { getEffectiveSubclassCurriculum } from '../../creation/creation-model.js';
 import { resolveSpellcastingTradition } from '../../data/subclass-spells.js';
 import { supportsFlexiblePreparation, getFlexibleSpellSlots } from '../../utils/flexible-spellcasting.js';
+import { preparesFromTraditionList } from '../../utils/spellcasting-support.js';
 
 export function buildFlexiblePreparationOptions(data) {
   return [
@@ -259,7 +260,8 @@ function projectSpellSectionData(data, target = 'primary') {
 }
 
 function getPreparedSlotLimits(classDef, slots, flexible) {
-  if (classDef.spellcasting.type !== 'prepared') return { preparedCantrips: 0, preparedRank1: 0 };
+  // Tradition-list casters prepare every pick automatically, so they get no Prepare button.
+  if (classDef.spellcasting.type !== 'prepared' || preparesFromTraditionList(classDef)) return { preparedCantrips: 0, preparedRank1: 0 };
   const count = (value) => Number(Array.isArray(value) ? value[0] : (value ?? 0));
   return {
     preparedCantrips: count(slots.cantrips),
