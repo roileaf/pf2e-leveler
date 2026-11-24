@@ -1,3 +1,9 @@
+## 3.12.35
+
+### Fixed
+
+- **Clerics and druids can pick spells during character creation** - Prepared casters without a spellbook skipped the creation spell step, so a new cleric or druid ended up with an empty spellcasting entry. They now choose their level-1 cantrips and 1st-rank spells (5 and 2 for a cleric, fewer with flexible preparation), and every pick is prepared into a daily slot when creation is applied
+
 ## 3.12.34
 
 - Fixed the level planner offering a bonus skill and language for a partial Intelligence boost (+4 to +4.5) after the level was applied and the planner was reopened.
