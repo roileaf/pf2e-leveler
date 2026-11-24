@@ -1,3 +1,8 @@
+## 3.12.33
+
+- Fixed Cantrip Expansion asking for four cantrips instead of two for SF2e technomancers and other spellbook casters in the level planner.
+- Spontaneous casters (such as sorcerers, mystics and witchwarpers) now get Cantrip Expansion's two cantrip picks in the level planner; before, the choice could be skipped entirely.
+
 ## 3.12.32
 
 - Fixed Lashunta in SF2e: the character wizard no longer shows five attribute flaws, and the free ancestry boost is no longer lost when the character is created.
