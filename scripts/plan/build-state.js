@@ -917,24 +917,32 @@ export function getIntelligenceBenefitCount(actor, plan, level) {
   if (!levelData?.abilityBoosts?.includes('int')) return 0;
 
   const actorLevel = Number(plan?.importedFromActor?.actorLevel ?? actor?.system?.details?.level?.value ?? 0);
-  if (plan?.importedFromActor?.hideHistoricalSkillIncreases === true && Number.isFinite(actorLevel) && level < actorLevel) {
-    return getHistoricalIntelligenceBenefitCount(actor, plan, level);
-  }
-
-  const before = computeBuildState(actor, plan, level - 1);
-  const after = computeBuildState(actor, plan, level);
-  const beforeRawInt = isPlannedBoostReflectedOnActor(actor, 'int', level, Number(actor?.system?.details?.level?.value ?? 0))
-    ? reverseApplyAbilityBoostValue(after.rawAttributes?.int ?? after.attributes.int ?? 0)
-    : (before.rawAttributes?.int ?? before.attributes.int ?? 0);
-  const beforeInt = Math.trunc(beforeRawInt);
-  const afterInt = Math.trunc(after.rawAttributes?.int ?? after.attributes.int ?? 0);
-  return Math.max(0, afterInt - beforeInt);
+  const isHistorical = plan?.importedFromActor?.hideHistoricalSkillIncreases === true && Number.isFinite(actorLevel) && level < actorLevel;
+  const knownBeforeRaw = isHistorical ? getVerifiedHistoricalRawIntBeforeLevel(actor, plan, level, actorLevel) : null;
+  const beforeRaw = Number.isFinite(knownBeforeRaw) ? knownBeforeRaw : getPlannedRawIntBeforeLevel(actor, plan, level);
+  return Math.max(0, Math.trunc(applyAbilityBoostValue(beforeRaw)) - Math.trunc(beforeRaw));
 }
 
-function reverseApplyAbilityBoostValue(value) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return 0;
-  return numeric > 4 ? numeric - 0.5 : numeric - 1;
+// The actor's Int already includes the boosts it has taken. Undo exactly those to find the
+// pre-plan baseline, then replay every planned Int boost before the target level in order, so
+// partial boosts (+4 to +4.5) land on the right side of each level.
+function getPlannedRawIntBeforeLevel(actor, plan, level) {
+  const actorLevel = Number(actor?.system?.details?.level?.value ?? 0);
+  const boosts = getAllPlannedBoosts(plan, MAX_LEVEL);
+  const intLevels = Object.keys(boosts)
+    .map(Number)
+    .filter((boostLevel) => Number.isFinite(boostLevel) && normalizeStoredBoostBucket(boosts[boostLevel]).includes('int'))
+    .sort((a, b) => a - b);
+
+  let raw = getActorAbilityModifier(actor, 'int');
+  for (const boostLevel of [...intLevels].reverse()) {
+    if (isPlannedBoostReflectedOnActor(actor, 'int', boostLevel, actorLevel)) raw = reverseApplyAbilityBoost(raw);
+  }
+  for (const boostLevel of intLevels) {
+    if (boostLevel >= level) break;
+    raw = applyAbilityBoostValue(raw);
+  }
+  return raw;
 }
 
 export function isImportedHistoricalSkillLevel(plan, level) {
@@ -1268,35 +1276,6 @@ function getLevelOneIntModifier(actor) {
   }
 
   return Math.trunc(intMod);
-}
-
-function getHistoricalIntelligenceBenefitCount(actor, plan, level) {
-  const actorLevel = Number(plan?.importedFromActor?.actorLevel ?? actor?.system?.details?.level?.value ?? level);
-  const knownBeforeRaw = getVerifiedHistoricalRawIntBeforeLevel(actor, plan, level, actorLevel);
-  if (Number.isFinite(knownBeforeRaw)) {
-    const knownAfterRaw = applyAbilityBoostValue(knownBeforeRaw);
-    return Math.max(0, Math.trunc(knownAfterRaw) - Math.trunc(knownBeforeRaw));
-  }
-
-  let afterRaw = getActorAbilityModifier(actor, 'int');
-  const boostEntries = {
-    ...(actor?.system?.build?.attributes?.boosts ?? {}),
-    ...getAllPlannedBoosts(plan, MAX_LEVEL),
-  };
-
-  const levels = Object.keys(boostEntries)
-    .map((entry) => Number(entry))
-    .filter((entry) => Number.isFinite(entry) && entry >= level)
-    .sort((a, b) => b - a);
-
-  for (const boostLevel of levels) {
-    if (!normalizeStoredBoostBucket(boostEntries[boostLevel]).includes('int')) continue;
-    afterRaw = reverseApplyAbilityBoost(afterRaw);
-  }
-
-  const beforeRaw = afterRaw;
-  const rawAfterLevel = applyAbilityBoostValue(beforeRaw);
-  return Math.max(0, Math.trunc(rawAfterLevel) - Math.trunc(beforeRaw));
 }
 
 function getVerifiedHistoricalRawIntBeforeLevel(actor, plan, targetLevel, actorLevel) {

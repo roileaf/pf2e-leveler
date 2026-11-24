@@ -16,7 +16,7 @@ import { SORCERER } from '../../../scripts/classes/sorcerer.js';
 import { THAUMATURGE } from '../../../scripts/classes/thaumaturge.js';
 import { WIZARD } from '../../../scripts/classes/wizard.js';
 import { MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID, PROFICIENCY_RANKS } from '../../../scripts/constants.js';
-import { computeBuildState, computePlanArchetypeDedicationProgress, computeSkillPickerState, getImportedInitialSkillLimit, syncPlanArchetypeDedicationProgress } from '../../../scripts/plan/build-state.js';
+import { computeBuildState, computePlanArchetypeDedicationProgress, computeSkillPickerState, getImportedInitialSkillLimit, getIntelligenceBenefitCount, syncPlanArchetypeDedicationProgress } from '../../../scripts/plan/build-state.js';
 import { createPlan, addLevelFeatRetrain, addLevelSkillRetrain, setLevelBoosts, setLevelFeat, setLevelSkillIncrease, toggleLevelIntBonusSkill } from '../../../scripts/plan/plan-model.js';
 import { checkPrerequisites } from '../../../scripts/prerequisites/prerequisite-checker.js';
 
@@ -2731,5 +2731,37 @@ describe('computeBuildState', () => {
     expect(state.archetypeDedicationProgress.get('second-dedication')).toBe(2);
     expect(state.incompleteArchetypeDedications.size).toBe(0);
     expect(state.canTakeNewArchetypeDedication).toBe(true);
+  });
+});
+
+describe('getIntelligenceBenefitCount partial boosts', () => {
+  const createFighter = (level, intMod, buildBoosts) => {
+    const actor = createMockActor();
+    actor.class = { slug: 'fighter', system: { keyAbility: { selected: 'str', value: ['str'] } } };
+    actor.system.details.level.value = level;
+    actor.system.abilities.int = { mod: intMod, base: Math.trunc(intMod) };
+    actor.system.build.attributes.boosts = { 1: ['str'], 5: [], 10: [], 15: [], 20: [], ...buildBoosts };
+    return actor;
+  };
+
+  it('gives no Int bonus for an applied gradual partial boost when later Int boosts are planned', () => {
+    const actor = createFighter(5, 4.5, { 5: ['int'] });
+    const plan = createPlan('fighter');
+    setLevelBoosts(plan, 3, ['int']);
+    setLevelBoosts(plan, 7, ['int']);
+    plan.importedFromActor = { actorLevel: 5, hideHistoricalSkillIncreases: true };
+
+    expect(getIntelligenceBenefitCount(actor, plan, 3)).toBe(0);
+    expect(getIntelligenceBenefitCount(actor, plan, 7)).toBe(1);
+  });
+
+  it('replays past Int boosts in order instead of reading every past level from the current modifier', () => {
+    const actor = createFighter(15, 5, { 5: ['int'], 10: ['int'], 15: ['int'] });
+    const plan = createPlan('fighter');
+    for (const level of [5, 10, 15]) setLevelBoosts(plan, level, ['int', 'str', 'dex', 'con']);
+
+    expect(getIntelligenceBenefitCount(actor, plan, 5)).toBe(1);
+    expect(getIntelligenceBenefitCount(actor, plan, 10)).toBe(0);
+    expect(getIntelligenceBenefitCount(actor, plan, 15)).toBe(1);
   });
 });
