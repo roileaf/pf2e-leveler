@@ -1086,6 +1086,8 @@ function formatPrice(price) {
   if (price.gp) parts.push(`${price.gp} gp`);
   if (price.sp) parts.push(`${price.sp} sp`);
   if (price.cp) parts.push(`${price.cp} cp`);
+  if (price.credits) parts.push(`${price.credits} credits`);
+  if (price.upb) parts.push(`${price.upb} UPB`);
   return parts.join(', ');
 }
 

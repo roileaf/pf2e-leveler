@@ -1,13 +1,21 @@
 import { CHARACTER_WEALTH, MODULE_ID, WEALTH_MODES } from '../constants.js';
 import { getActiveSystemId, SYSTEM_IDS } from '../system-support/profiles.js';
 
+// Prepared SF2e documents report prices in credits (and UPBs), worth 10cp each, alongside the coin keys.
+const CP_PER_UNIT = { pp: 1000, gp: 100, sp: 10, cp: 1, credits: 10, upb: 10 };
+
+export function priceToCp(price) {
+  if (!price || typeof price !== 'object') return 0;
+  return Object.entries(CP_PER_UNIT).reduce((total, [unit, cp]) => total + (Number(price[unit]) || 0) * cp, 0);
+}
+
 export function getEquipmentTotalCp(equipment = []) {
   let totalCp = 0;
   for (const entry of equipment) {
     if (!entry?.price) continue;
     const quantity = Number(entry.quantity ?? 1) || 1;
     const pricePer = Number(entry.pricePer ?? 1) || 1;
-    const unitCp = (Number(entry.price.gp) || 0) * 100 + (Number(entry.price.sp) || 0) * 10 + (Number(entry.price.cp) || 0);
+    const unitCp = priceToCp(entry.price);
     totalCp += Math.ceil((quantity / pricePer) * unitCp);
   }
   return totalCp;

@@ -33,7 +33,7 @@ import { filterPublicationsForCurrentUser } from '../../access/source-classifica
 import { bringApplicationToFront, getOpenApplications, isApplicationAbove, renderApplicationInFront, scheduleBringApplicationToFront } from '../shared/window-focus.js';
 import { resolveSpellcastingTradition } from '../../data/subclass-spells.js';
 import { mountPlanComments, collectWizardCommentAnchors } from '../plan-comments-ui.js';
-import { getEquipmentTotalCp, getStartingEquipmentBudgetCp } from '../../creation/starting-wealth.js';
+import { getEquipmentTotalCp, getStartingEquipmentBudgetCp, priceToCp } from '../../creation/starting-wealth.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 registerHandlebarsHelpers();
@@ -1450,7 +1450,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
           for (const item of selectedItems) {
             if (!item) continue;
             if (budgetCp > 0 && !game.user.isGM) {
-              const itemCp = (item.system?.price?.value?.gp ?? 0) * 100 + (item.system?.price?.value?.sp ?? 0) * 10 + (item.system?.price?.value?.cp ?? 0);
+              const itemCp = priceToCp(item.system?.price?.value);
               if (currentCp + itemCp > budgetCp) {
                 const limitGp = budgetCp / 100;
                 ui.notifications.warn(
