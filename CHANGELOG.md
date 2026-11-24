@@ -1,3 +1,8 @@
+## 3.12.34
+
+- Fixed the level planner offering a bonus skill and language for a partial Intelligence boost (+4 to +4.5) after the level was applied and the planner was reopened.
+- Past levels in the level planner now show the correct Intelligence bonus choices when Intelligence was boosted more than once.
+
 ## 3.12.33
 
 - Fixed Cantrip Expansion asking for four cantrips instead of two for SF2e technomancers and other spellbook casters in the level planner.
