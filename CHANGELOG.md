@@ -1,3 +1,7 @@
+## 3.12.30
+
+- Fixed the feat picker showing feats from compendiums that weren't selected in the Feats category. Once you pick feat compendiums, only those and the system's own packs are used.
+
 ## 3.12.29
 
 - Fixed Starfinder 2e character creation freezing at 72% ("Waiting for PF2E class option prompts") when starting money was left over after buying gear. SF2e has no gold or silver coins of its own, so leftover money is now added as credits.
