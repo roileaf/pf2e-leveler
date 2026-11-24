@@ -3305,4 +3305,66 @@ describe('applyCreation equipment sizing', () => {
       }),
     ]);
   });
+
+  it('skips spells and effects saved as equipment before the item picker filtered them', async () => {
+    game.settings.get = jest.fn((_module, key) => key === 'startingWealthMode'
+      ? WEALTH_MODES.ITEMS_AND_CURRENCY
+      : false);
+
+    const actor = createMockActor({
+      items: [],
+      system: {
+        details: { level: { value: 1 } },
+        traits: { size: { value: 'med' } },
+      },
+    });
+    actor.inventory = { addCoins: jest.fn(async () => {}) };
+    actor.createEmbeddedDocuments = jest.fn(async (_type, docs) => docs);
+    actor.update = jest.fn(async () => {});
+    actor.testUserPermission = jest.fn(() => true);
+    game.users = [{ isGM: true, id: 'gm-user' }];
+    ChatMessage.create = jest.fn(async () => {});
+
+    const docs = {
+      'module-spell': { name: 'Dynamic Stride', type: 'spell', system: {} },
+      'module-effect': { name: 'Effect: Dynamic', type: 'effect', system: { rules: [{ key: 'ChoiceSet' }] } },
+      'equipment-rope': { name: 'Rope', type: 'equipment', system: { quantity: 1 } },
+    };
+    global.fromUuid = jest.fn(async (uuid) => docs[uuid]
+      ? { uuid, name: docs[uuid].name, toObject: () => JSON.parse(JSON.stringify(docs[uuid])) }
+      : null);
+
+    await applyCreation(actor, {
+      ancestry: null,
+      heritage: null,
+      background: null,
+      class: null,
+      subclass: null,
+      boosts: { free: [] },
+      languages: [],
+      skills: [],
+      lores: [],
+      ancestryFeat: null,
+      ancestryParagonFeat: null,
+      classFeat: null,
+      dualClassFeat: null,
+      skillFeat: null,
+      grantedFeatSections: [],
+      grantedFeatChoices: {},
+      featGrants: [],
+      permanentItems: [{ uuid: 'module-effect', name: 'Effect: Dynamic' }],
+      equipment: [
+        { uuid: 'module-spell', name: 'Dynamic Stride', quantity: 1, price: { gp: 5 }, pricePer: 1 },
+        { uuid: 'module-effect', name: 'Effect: Dynamic', quantity: 1 },
+        { uuid: 'equipment-rope', name: 'Rope', quantity: 1, price: { gp: 1 }, pricePer: 1 },
+      ],
+      spells: { cantrips: [], rank1: [] },
+    });
+
+    const createdNames = actor.createEmbeddedDocuments.mock.calls.flatMap(([, created]) => created.map((doc) => doc.name));
+    expect(createdNames).toContain('Rope');
+    expect(createdNames).not.toContain('Dynamic Stride');
+    expect(createdNames).not.toContain('Effect: Dynamic');
+    expect(actor.inventory.addCoins).toHaveBeenCalledWith({ gp: 14 });
+  });
 });

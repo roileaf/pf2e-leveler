@@ -2,7 +2,7 @@ import { getClassHandler } from './class-handlers/registry.js';
 import { getClassArchetypeGrantedSkills, getClassSelectionData, getGrantedFeatChoiceValues } from './creation-model.js';
 import { ClassRegistry } from '../classes/registry.js';
 import { anyClassGrantsDeitySkill } from '../classes/deity-skill.js';
-import { ATTRIBUTES, MODULE_ID, MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID } from '../constants.js';
+import { ATTRIBUTES, EQUIPMENT_ITEM_TYPES, MODULE_ID, MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID } from '../constants.js';
 import { getCompendiumKeysForCategory } from '../compendiums/catalog.js';
 import { info, warn } from '../utils/logger.js';
 import { capitalize, getCampaignFeatSectionIds, isAncestralParagonEnabled, isMythicEnabled } from '../utils/pf2e-api.js';
@@ -414,26 +414,40 @@ async function applyEquipment(actor, data) {
   const actorSize = actor.system?.traits?.size?.value;
   for (const entry of data.permanentItems ?? []) {
     if (!entry) continue;
-    const item = await fromUuid(entry.uuid).catch(() => null);
-    if (!item) continue;
-    const itemData = foundry.utils.deepClone(item.toObject());
+    const itemData = await resolveEquipmentItemData(entry);
+    if (!itemData) continue;
     applyActorSizeToItem(itemData, actorSize);
     await actor.createEmbeddedDocuments('Item', [itemData]);
   }
+  const purchased = [];
   for (const entry of data.equipment ?? []) {
-    const item = await fromUuid(entry.uuid).catch(() => null);
-    if (!item) continue;
-    const itemData = foundry.utils.deepClone(item.toObject());
+    const itemData = await resolveEquipmentItemData(entry);
+    if (!itemData) continue;
     itemData.system.quantity = entry.quantity ?? 1;
     applyActorSizeToItem(itemData, actorSize);
     await actor.createEmbeddedDocuments('Item', [itemData]);
+    purchased.push(entry);
   }
 
   const budgetCp = getStartingEquipmentBudgetCp(actor);
-  const unspentCp = Math.max(0, budgetCp - getEquipmentTotalCp(data.equipment));
+  const unspentCp = Math.max(0, budgetCp - getEquipmentTotalCp(purchased));
   if (unspentCp > 0) {
     await actor.inventory.addCoins(coinsFromCp(unspentCp));
   }
+}
+
+// Older saves can hold spells or effects picked from mixed module packs; creating those opens
+// unanswerable system prompts that stall creation.
+async function resolveEquipmentItemData(entry) {
+  if (!entry?.uuid) return null;
+  const item = await fromUuid(entry.uuid).catch(() => null);
+  if (!item) return null;
+  const itemData = foundry.utils.deepClone(item.toObject());
+  if (!EQUIPMENT_ITEM_TYPES.has(String(itemData?.type ?? '').toLowerCase())) {
+    warn(`Skipping ${itemData?.name ?? entry.uuid}: ${itemData?.type} is not equipment`);
+    return null;
+  }
+  return itemData;
 }
 
 async function applySelectedSkillChoices(actor, data) {
