@@ -1,3 +1,7 @@
+## 3.12.31
+
+- Fixed Starfinder 2e starting wealth (Items + Currency) not charging for the chosen equipment, which gave characters their gear plus the full starting budget. SF2e prices in credits are now counted, and the item picker shows them.
+
 ## 3.12.30
 
 - Fixed the feat picker showing feats from compendiums that weren't selected in the Feats category. Once you pick feat compendiums, only those and the system's own packs are used.
