@@ -544,6 +544,7 @@
             "HIGHER_LEVEL_REDIRECT_TITLE": "打开等级规划器",
             "HIGHER_LEVEL_REDIRECT_BODY": "该高等级角色已选择族裔和职业。请使用等级规划器而非角色创建。",
             "CREATION_COMPLETE": "角色创建成功！",
+            "CREATION_FAILED": "角色创建因错误而中止。详情请查看浏览器控制台（F12）。",
             "BOOSTS_HINT": "选择4个不同的属性进行提升。",
             "LANGUAGES_HINT": "选择{count}种额外语言。",
             "ADDITIONAL_LANGUAGES": "额外语言",

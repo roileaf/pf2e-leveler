@@ -1,4 +1,5 @@
 import { CHARACTER_WEALTH, MODULE_ID, WEALTH_MODES } from '../constants.js';
+import { getActiveSystemId, SYSTEM_IDS } from '../system-support/profiles.js';
 
 export function getEquipmentTotalCp(equipment = []) {
   let totalCp = 0;
@@ -26,7 +27,16 @@ export function getStartingEquipmentBudgetCp(actor) {
   return 0;
 }
 
-export function coinsFromCp(totalCp) {
+// SF2e has no coin items of its own (it pulls them from pf2e.equipment-srd), so pay it in credits.
+export function startingCurrencyFromCp(totalCp) {
+  if (getActiveSystemId() === SYSTEM_IDS.SF2E) {
+    const credits = Math.floor(Math.max(0, Number(totalCp) || 0) / 10);
+    return credits > 0 ? { credits } : {};
+  }
+  return coinsFromCp(totalCp);
+}
+
+function coinsFromCp(totalCp) {
   let remainder = Math.max(0, Math.trunc(Number(totalCp) || 0));
   const gp = Math.floor(remainder / 100);
   remainder %= 100;

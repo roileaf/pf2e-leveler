@@ -288,6 +288,7 @@
       "HIGHER_LEVEL_REDIRECT_TITLE": "Stufenplaner öffnen",
       "HIGHER_LEVEL_REDIRECT_BODY": "Dieser höherstufige Charakter hat bereits eine Abstammung und Klasse ausgewählt. Nutze statt der Charaktererschaffung den Stufenplaner.",
       "CREATION_COMPLETE": "Charakter erfolgreich erstellt!",
+      "CREATION_FAILED": "Die Charaktererstellung wurde wegen eines Fehlers abgebrochen. Details stehen in der Browserkonsole (F12).",
       "BOOSTS_HINT": "Wähle 4 unterschiedliche Attribute für Verbesserungen.",
       "SKILLS_HINT": "Wähle {count} zusätzliche Fertigkeiten, in denen du Geübt wirst.",
       "REQUIRED_SKILL_TRAINING": "Erforderliches Fertigkeitstraining",

@@ -3367,4 +3367,57 @@ describe('applyCreation equipment sizing', () => {
     expect(createdNames).not.toContain('Effect: Dynamic');
     expect(actor.inventory.addCoins).toHaveBeenCalledWith({ gp: 14 });
   });
+
+  it('pays leftover SF2e starting money in credits since SF2e has no coin items', async () => {
+    const originalSystem = game.system;
+    game.system = { id: 'sf2e' };
+    game.settings.get = jest.fn((_module, key) => key === 'startingWealthMode'
+      ? WEALTH_MODES.ITEMS_AND_CURRENCY
+      : false);
+
+    const actor = createMockActor({
+      items: [],
+      system: {
+        details: { level: { value: 1 } },
+        traits: { size: { value: 'med' } },
+      },
+    });
+    actor.inventory = { addCoins: jest.fn(async () => {}) };
+    actor.createEmbeddedDocuments = jest.fn(async (_type, docs) => docs);
+    actor.update = jest.fn(async () => {});
+    actor.testUserPermission = jest.fn(() => true);
+    game.users = [{ isGM: true, id: 'gm-user' }];
+    ChatMessage.create = jest.fn(async () => {});
+    global.fromUuid = jest.fn(async (uuid) => uuid === 'nanosuit'
+      ? { uuid, name: 'Nanosuit', toObject: () => ({ name: 'Nanosuit', type: 'armor', system: { quantity: 1 } }) }
+      : null);
+
+    try {
+      await applyCreation(actor, {
+        ancestry: null,
+        heritage: null,
+        background: null,
+        class: null,
+        subclass: null,
+        boosts: { free: [] },
+        languages: [],
+        skills: [],
+        lores: [],
+        ancestryFeat: null,
+        ancestryParagonFeat: null,
+        classFeat: null,
+        dualClassFeat: null,
+        skillFeat: null,
+        grantedFeatSections: [],
+        grantedFeatChoices: {},
+        featGrants: [],
+        equipment: [{ uuid: 'nanosuit', name: 'Nanosuit', quantity: 1, price: { sp: 40 }, pricePer: 1 }],
+        spells: { cantrips: [], rank1: [] },
+      });
+    } finally {
+      game.system = originalSystem;
+    }
+
+    expect(actor.inventory.addCoins).toHaveBeenCalledWith({ credits: 110 });
+  });
 });

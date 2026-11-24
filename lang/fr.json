@@ -239,6 +239,7 @@
         "HIGHER_LEVEL_REDIRECT_TITLE": "Ouvrir le planificateur de niveaux",
         "HIGHER_LEVEL_REDIRECT_BODY": "Ce personnage de niveau superieur a deja une ascendance et une classe selectionnees. Utilisez plutot le planificateur de niveaux.",
         "CREATION_COMPLETE": "Personnage cree avec succes !",
+        "CREATION_FAILED": "La creation du personnage s'est arretee a cause d'une erreur. Consultez la console du navigateur (F12) pour les details.",
       "BOOSTS_HINT": "Choisissez 4 caracteristiques differentes a augmenter.",
       "SKILLS_HINT": "Choisissez {count} competences supplementaires a former.",
       "LANGUAGES_HINT": "Choisissez {count} langues supplementaires.",

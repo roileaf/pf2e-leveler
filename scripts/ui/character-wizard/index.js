@@ -6,6 +6,7 @@ import { buildFeatGrantRequirements, getFeatGrantCompletion, getFeatGrantSelecti
 import { getCreationData, saveCreationData, exportCreationData, importCreationData } from '../../creation/creation-store.js';
 import { applyCreation } from '../../creation/apply-creation.js';
 import { localize } from '../../utils/i18n.js';
+import { error } from '../../utils/logger.js';
 import { evaluatePredicate } from '../../utils/predicate.js';
 import { getBuildStateAncestryFeatTraits } from '../../utils/ancestry-feat-traits.js';
 import { registerHandlebarsHelpers } from '../../hooks/lifecycle.js';
@@ -1753,6 +1754,7 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     if (!confirmed) return;
 
+    let failed = false;
     try {
       this.isApplying = true;
       this.applyProgress = 0.02;
@@ -1777,12 +1779,17 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
         const { LevelPlanner } = await import('../level-planner/index.js');
         new LevelPlanner(this.actor, { sequentialMode: true, creationHandoff: true }).setFocusAnchor(this._focusAnchorElement).render(true);
       }
+    } catch (err) {
+      error('Character creation failed', err);
+      ui.notifications.error(localize('CREATION.CREATION_FAILED'));
+      failed = true;
     } finally {
       this._stopApplyPromptWatcher();
       this.isApplying = false;
       this.applyProgress = 0;
       this.applyStatus = '';
     }
+    if (failed) this.render(true);
   }
 
   _startApplyPromptWatcher() {

@@ -347,6 +347,7 @@
         "HIGHER_LEVEL_REDIRECT_TITLE": "Open Level Planner",
         "HIGHER_LEVEL_REDIRECT_BODY": "This higher-level character already has an ancestry and class selected. Use the level planner instead of character creation.",
         "CREATION_COMPLETE": "Character created successfully!",
+        "CREATION_FAILED": "Character creation stopped because of an error. Check the browser console (F12) for details.",
       "BOOSTS_HINT": "Choose 4 different ability scores to boost.",
       "SKILLS_HINT": "Choose {count} additional skills to train.",
       "REQUIRED_SKILL_TRAINING": "Required Skill Training",

@@ -18,7 +18,7 @@ import { hasEmbeddedSpellChoiceDescription } from '../utils/spell-description.js
 import { resolveSpellcastingTradition } from '../data/subclass-spells.js';
 import { getAutomaticLoreProficiencies } from '../classes/progression.js';
 import { getCreationLoreSkillNames } from './creation-model.js';
-import { coinsFromCp, getEquipmentTotalCp, getStartingEquipmentBudgetCp } from './starting-wealth.js';
+import { getEquipmentTotalCp, getStartingEquipmentBudgetCp, startingCurrencyFromCp } from './starting-wealth.js';
 import { refillFocusPool } from '../utils/focus-pool.js';
 
 export async function applyCreation(actor, data, onProgress = null) {
@@ -431,8 +431,9 @@ async function applyEquipment(actor, data) {
 
   const budgetCp = getStartingEquipmentBudgetCp(actor);
   const unspentCp = Math.max(0, budgetCp - getEquipmentTotalCp(purchased));
-  if (unspentCp > 0) {
-    await actor.inventory.addCoins(coinsFromCp(unspentCp));
+  const currency = startingCurrencyFromCp(unspentCp);
+  if (Object.keys(currency).length > 0) {
+    await actor.inventory.addCoins(currency);
   }
 }
 
