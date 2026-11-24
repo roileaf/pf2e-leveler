@@ -158,4 +158,66 @@ describe('CharacterWizard boosts completion', () => {
 
     expect(conTotal.mod).toBe(0);
   });
+
+  it('ignores an ancestry flaw set that lists every attribute', async () => {
+    const wizard = new CharacterWizard(createMockActor());
+    wizard.data.ancestry = { uuid: 'ancestry-uuid', name: 'Lashunta' };
+    wizard.data.boosts = { ancestry: [], background: [], class: [], free: [] };
+
+    wizard._getCachedDocument = jest.fn(async (uuid) => {
+      if (uuid !== 'ancestry-uuid') return null;
+      return {
+        name: 'Lashunta',
+        system: {
+          boosts: {
+            0: { value: ['cha'] },
+            1: { value: ['str', 'dex', 'con', 'int', 'wis', 'cha'] },
+          },
+          flaws: {
+            0: { value: ['str', 'dex', 'con', 'int', 'wis', 'cha'] },
+          },
+        },
+      };
+    });
+
+    const context = await wizard._buildBoostContext();
+    const ancestryRow = context.boostRows.find((row) => row.source === 'ancestry');
+
+    expect(ancestryRow.flaws).toEqual([]);
+    expect(ancestryRow.cells.some((cell) => cell.type === 'flaw' || cell.hasFlaw)).toBe(false);
+    expect(context.summary.find((cell) => cell.key === 'str').mod).toBe(0);
+  });
+  it('applies the Damaya Lashunta heritage boost and flaw to the ancestry row', async () => {
+    const wizard = new CharacterWizard(createMockActor());
+    wizard.data.ancestry = { uuid: 'ancestry-uuid', name: 'Lashunta' };
+    wizard.data.heritage = { uuid: 'heritage-uuid', name: 'Damaya Lashunta' };
+    wizard.data.boosts = { ancestry: ['int'], background: [], class: [], free: [] };
+
+    wizard._getCachedDocument = jest.fn(async (uuid) => {
+      if (uuid === 'heritage-uuid') return { name: 'Damaya Lashunta', system: { slug: 'damaya-lashunta' } };
+      if (uuid !== 'ancestry-uuid') return null;
+      return {
+        name: 'Lashunta',
+        system: {
+          boosts: {
+            0: { value: ['cha'] },
+            1: { value: [] },
+            2: { value: ['str', 'dex', 'con', 'int', 'wis', 'cha'] },
+          },
+          flaws: {
+            0: { value: ['str', 'dex', 'con', 'int', 'wis', 'cha'] },
+          },
+        },
+      };
+    });
+
+    const context = await wizard._buildBoostContext();
+    const ancestryRow = context.boostRows.find((row) => row.source === 'ancestry');
+
+    expect(ancestryRow.fixed).toEqual(['cha', 'int']);
+    expect(ancestryRow.flaws).toEqual(['con']);
+    expect(ancestryRow.freeCount).toBe(1);
+    expect(ancestryRow.options).not.toContain('int');
+    expect(wizard.data.boosts.ancestry).toEqual([]);
+  });
 });

@@ -34,6 +34,7 @@ import { bringApplicationToFront, getOpenApplications, isApplicationAbove, rende
 import { resolveSpellcastingTradition } from '../../data/subclass-spells.js';
 import { mountPlanComments, collectWizardCommentAnchors } from '../plan-comments-ui.js';
 import { getEquipmentTotalCp, getStartingEquipmentBudgetCp, priceToCp } from '../../creation/starting-wealth.js';
+import { getAncestryAttributeSlots } from '../../creation/heritage-attributes.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 registerHandlebarsHelpers();
@@ -2000,10 +2001,11 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
       if (this.data.alternateAncestryBoosts) {
         applyBoosts(this.data.boosts.ancestry ?? []);
       } else {
-        const sets = this._parseBoostSets(ancestry?.system?.boosts);
+        const slots = await this._getAncestryAttributeSlots(ancestry);
+        const sets = this._parseBoostSets(slots.boosts);
         applyBoosts(sets.filter((set) => set.type === 'fixed').map((set) => set.attr));
         applyBoosts(this.data.boosts.ancestry ?? []);
-        mod -= this._extractFixedValues(ancestry?.system?.flaws).filter((value) => value === 'int').length;
+        mod -= this._extractFixedValues(slots.flaws).filter((value) => value === 'int').length;
       }
     }
 
@@ -2654,13 +2656,17 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
       if (this.data.alternateAncestryBoosts) {
         buildRow('ancestry', item?.name ?? '', 'Ancestry (Alternate)', [], [], 2, [...ATTRIBUTES], this.data.boosts.ancestry ?? []);
       } else {
-        const sets = this._parseBoostSets(item?.system?.boosts);
-        const flaws = this._extractFixedValues(item?.system?.flaws);
+        const slots = await this._getAncestryAttributeSlots(item);
+        const sets = this._parseBoostSets(slots.boosts);
+        const flaws = this._extractFixedValues(slots.flaws);
         const fixed = sets.filter((s) => s.type === 'fixed').map((s) => s.attr);
         const choices = sets.filter((s) => s.type === 'choice');
         const totalFree = choices.length;
         const allOptions = totalFree > 0 ? (choices.some((c) => c.options.length === 6) ? [...ATTRIBUTES] : choices[0].options) : [];
-        buildRow('ancestry', item?.name ?? '', 'Ancestry', fixed, flaws, totalFree, allOptions, this.data.boosts.ancestry ?? []);
+        // A heritage picked after the boosts can rule out an earlier pick (Damaya's free boost can't be Int).
+        const validPicks = new Set(choices.flatMap((choice) => choice.options));
+        this.data.boosts.ancestry = (this.data.boosts.ancestry ?? []).filter((attribute) => validPicks.has(attribute));
+        buildRow('ancestry', item?.name ?? '', 'Ancestry', fixed, flaws, totalFree, allOptions, this.data.boosts.ancestry);
       }
     }
 
@@ -2769,13 +2775,18 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
     return sets;
   }
 
+  async _getAncestryAttributeSlots(ancestry) {
+    const heritage = this.data.heritage?.uuid ? await this._getCachedDocument(this.data.heritage.uuid) : null;
+    return getAncestryAttributeSlots(ancestry, heritage ?? this.data.heritage);
+  }
+
   _extractFixedValues(obj) {
     if (!obj) return [];
     const result = [];
+    // Multi-value sets are choices (some SF2e ancestries ship an unused "free" flaw), not fixed values.
     for (const b of Object.values(obj)) {
-      for (const v of b.value ?? []) {
-        if (ATTRIBUTES.includes(v)) result.push(v);
-      }
+      const values = b?.value ?? [];
+      if (values.length === 1 && ATTRIBUTES.includes(values[0])) result.push(values[0]);
     }
     return result;
   }

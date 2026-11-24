@@ -1,5 +1,5 @@
 import { getAdditionalSelectedFormulas, getAdditionalSelectedItems, getAdditionalSelectedSkills } from '../../../scripts/creation/apply-creation.js';
-import { applyCreation, applyItem, applyLores } from '../../../scripts/creation/apply-creation.js';
+import { applyBoosts, applyCreation, applyItem, applyLores } from '../../../scripts/creation/apply-creation.js';
 import { MIXED_ANCESTRY_CHOICE_FLAG, MIXED_ANCESTRY_UUID, MODULE_ID, WEALTH_MODES } from '../../../scripts/constants.js';
 import { createCreationData, setClassArchetype, setMythicCalling } from '../../../scripts/creation/creation-model.js';
 
@@ -3419,5 +3419,46 @@ describe('applyCreation equipment sizing', () => {
     }
 
     expect(actor.inventory.addCoins).toHaveBeenCalledWith({ credits: 110 });
+  });
+});
+
+describe('applyBoosts heritage attributes', () => {
+  const ALL = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+  const createActor = (heritage) => ({
+    heritage,
+    items: [],
+    ancestry: {
+      system: {
+        boosts: { 0: { value: ['cha'] }, 1: { value: [] }, 2: { value: [...ALL] } },
+        flaws: { 0: { value: [...ALL] } },
+      },
+      update: jest.fn(async () => {}),
+    },
+  });
+
+  it('writes the Damaya boost and flaw onto the ancestry and keeps the free boost in the free slot', async () => {
+    const actor = createActor({ slug: 'damaya-lashunta' });
+
+    await applyBoosts(actor, { boosts: { ancestry: ['dex'] } });
+
+    expect(actor.ancestry.update).toHaveBeenCalledWith({
+      'system.boosts': {
+        0: { value: ['cha'] },
+        1: { value: ['int'] },
+        2: { value: ['str', 'dex', 'con', 'wis', 'cha'], selected: 'dex' },
+      },
+      'system.flaws': { 0: { value: ['con'] } },
+    });
+  });
+
+  it('does not put the free boost into an empty slot when the heritage adds nothing', async () => {
+    const actor = createActor({ slug: 'unbound-lashunta' });
+
+    await applyBoosts(actor, { boosts: { ancestry: ['dex'] } });
+
+    const update = actor.ancestry.update.mock.calls[0][0];
+    expect(update['system.boosts'][1].selected).toBeUndefined();
+    expect(update['system.boosts'][2].selected).toBe('dex');
+    expect(update['system.flaws']).toBeUndefined();
   });
 });

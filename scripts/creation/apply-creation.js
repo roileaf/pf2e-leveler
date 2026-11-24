@@ -18,6 +18,7 @@ import { hasEmbeddedSpellChoiceDescription } from '../utils/spell-description.js
 import { resolveSpellcastingTradition } from '../data/subclass-spells.js';
 import { getAutomaticLoreProficiencies } from '../classes/progression.js';
 import { getCreationLoreSkillNames } from './creation-model.js';
+import { getAncestryAttributeSlots } from './heritage-attributes.js';
 import { getEquipmentTotalCp, getStartingEquipmentBudgetCp, startingCurrencyFromCp } from './starting-wealth.js';
 import { refillFocusPool } from '../utils/focus-pool.js';
 
@@ -259,7 +260,7 @@ async function applyFeat(actor, entry, group, level) {
   await actor.createEmbeddedDocuments('Item', [itemData]);
 }
 
-async function applyBoosts(actor, data) {
+export async function applyBoosts(actor, data) {
   const ancestryBoosts = data.boosts.ancestry ?? [];
   const backgroundBoosts = data.boosts.background ?? [];
   const classBoosts = data.boosts.class ?? [];
@@ -269,20 +270,19 @@ async function applyBoosts(actor, data) {
   const ancestry = actor.ancestry;
   if (ancestry && data.alternateAncestryBoosts) {
     await ancestry.update({ 'system.alternateAncestryBoosts': ancestryBoosts });
-  } else if (ancestry && ancestryBoosts.length) {
-    const boostSlots = ancestry.system?.boosts ?? {};
-    const update = {};
+  } else if (ancestry) {
+    const { boosts: boostSlots, flaws: flawSlots, changed } = getAncestryAttributeSlots(ancestry, actor.heritage ?? data.heritage);
+    // Heritage-adjusted slots are written back so the system and the planner see the same boosts and flaws.
     let boostIdx = 0;
-    for (const [slotKey, slot] of Object.entries(boostSlots)) {
-      const vals = slot.value ?? [];
-      if (vals.length === 1) continue;
-      if (boostIdx < ancestryBoosts.length) {
-        update[`system.boosts.${slotKey}.selected`] = ancestryBoosts[boostIdx];
-        boostIdx++;
-      }
+    for (const slot of Object.values(boostSlots)) {
+      if (slot.value.length <= 1 || boostIdx >= ancestryBoosts.length) continue;
+      slot.selected = ancestryBoosts[boostIdx];
+      boostIdx++;
     }
-    if (Object.keys(update).length) {
-      await ancestry.update(update);
+    if (changed) {
+      await ancestry.update({ 'system.boosts': boostSlots, 'system.flaws': flawSlots });
+    } else if (boostIdx > 0) {
+      await ancestry.update({ 'system.boosts': boostSlots });
     }
   }
 
