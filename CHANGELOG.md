@@ -1,3 +1,8 @@
+## 3.12.29
+
+- Fixed Starfinder 2e character creation freezing at 72% ("Waiting for PF2E class option prompts") when starting money was left over after buying gear. SF2e has no gold or silver coins of its own, so leftover money is now added as credits.
+- If character creation hits an error, the wizard now shows a notification and recovers instead of sitting on its progress bar.
+
 ## 3.12.28
 
 - Fixed character creation getting stuck at 72% ("Waiting for PF2E class option prompts") when the saved equipment list contained spells or effects picked from mixed module packs before 3.12.27. Creation now skips anything that isn't gear.
