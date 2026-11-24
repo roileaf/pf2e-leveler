@@ -1,3 +1,10 @@
+## 3.12.27
+
+### Fixed
+
+- **Character creation stuck on class option prompts** - When the system asks you to pick an option during character creation (for example a skill or a Mechanic's exocortex), the prompt now stays in front of the creation window. Before, it could end up hidden behind it and creation waited forever, most often in Starfinder 2e
+- **Spells and effects in the item picker** - Equipment compendiums from modules that also contain spells, effects or feats (such as Magic+ and Adventures+) no longer list those as items
+
 ## 3.12.26
 
 ### Fixed
