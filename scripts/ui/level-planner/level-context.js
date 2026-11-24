@@ -1,4 +1,4 @@
-import { INITIAL_SKILL_RETRAIN_SOURCE_TYPE, PROFICIENCY_RANK_NAMES, PROFICIENCY_RANKS, SUBCLASS_TAGS, WEALTH_MODES, CHARACTER_WEALTH, expandPermanentItemSlots, MODULE_ID } from '../../constants.js';
+import { INITIAL_SKILL_RETRAIN_SOURCE_TYPE, PROFICIENCY_RANK_NAMES, PROFICIENCY_RANKS, SPELLBOOK_CLASSES, SUBCLASS_TAGS, WEALTH_MODES, CHARACTER_WEALTH, expandPermanentItemSlots, MODULE_ID } from '../../constants.js';
 import { getChoicesForLevel, getSkillFeatRestriction, getSkillIncreaseChoiceSource, getSkillIncreaseChoices } from '../../classes/progression.js';
 import { ClassRegistry } from '../../classes/registry.js';
 import { format } from '../../utils/i18n.js';
@@ -712,8 +712,10 @@ async function buildPlannerFeatGrantRequirements(planner, feat) {
     level: planner.selectedLevel,
     feats: [feat],
   });
+  // Spellbook casters pick Cantrip Expansion's cantrips in the spellbook section, so drop the text-detected copy.
+  const hasSpellbook = getPlannerClassGrantEntries(planner).some((entry) => SPELLBOOK_CLASSES.includes(entry.slug));
   const requirements = detectedRequirements.filter((requirement) =>
-    !isSpellbookBonusCantripRequirement(feat, requirement));
+    !(hasSpellbook && isSpellbookBonusCantripRequirement(feat, requirement)));
   const levelData = getLevelData(planner.plan, planner.selectedLevel) ?? {};
   const completion = getFeatGrantCompletion(levelData, requirements);
 
@@ -733,8 +735,7 @@ async function buildPlannerFeatGrantRequirements(planner, feat) {
 function isSpellbookBonusCantripRequirement(feat, requirement) {
   return isCantripExpansionFeat(feat)
     && requirement?.kind === 'spell'
-    && Number(requirement?.filters?.rank) === 0
-    && requirement?.filters?.spellbook === true;
+    && Number(requirement?.filters?.rank) === 0;
 }
 
 function buildCustomSkillIncreaseGroups(customSkillIncreases) {

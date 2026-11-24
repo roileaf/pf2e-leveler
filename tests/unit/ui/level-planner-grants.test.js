@@ -6,12 +6,16 @@ import { ALCHEMIST } from '../../../scripts/classes/alchemist.js';
 import { WIZARD } from '../../../scripts/classes/wizard.js';
 import { FIGHTER } from '../../../scripts/classes/fighter.js';
 import { CHAMPION } from '../../../scripts/classes/champion.js';
+import { SORCERER } from '../../../scripts/classes/sorcerer.js';
+import { TECHNOMANCER } from '../../../scripts/classes/technomancer.js';
 
 beforeAll(() => {
   if (!ClassRegistry.get('alchemist')) ClassRegistry.register(ALCHEMIST);
   if (!ClassRegistry.get('wizard')) ClassRegistry.register(WIZARD);
   if (!ClassRegistry.get('fighter')) ClassRegistry.register(FIGHTER);
   if (!ClassRegistry.get('champion')) ClassRegistry.register(CHAMPION);
+  if (!ClassRegistry.get('sorcerer')) ClassRegistry.register(SORCERER);
+  if (!ClassRegistry.get('technomancer')) ClassRegistry.register(TECHNOMANCER);
 });
 
 describe('level planner grant previews', () => {
@@ -2713,6 +2717,51 @@ describe('level planner grant previews', () => {
     const context = await buildLevelContext(planner, WIZARD, {});
 
     expect(context.classFeat.grantRequirements).toEqual([]);
+  });
+
+  test.each([
+    ['technomancer', 0],
+    ['sorcerer', 1],
+  ])('keeps SF2e repertoire-worded Cantrip Expansion choices only when %s has no spellbook section', async (classSlug, expectedCount) => {
+    global.fromUuid = jest.fn(async (uuid) => (uuid === 'feat-cantrip-expansion'
+      ? {
+          uuid,
+          name: 'Cantrip Expansion',
+          slug: 'cantrip-expansion',
+          system: {
+            description: { value: '<p>Study broadens your range of simple spells. Add two additional cantrips from your spell list to your repertoire.</p>' },
+            rules: [],
+            traits: { value: [] },
+          },
+        }
+      : null));
+
+    const planner = {
+      actor: createMockActor({ items: [] }),
+      selectedLevel: 2,
+      plan: {
+        classSlug,
+        levels: {
+          2: {
+            classFeats: [{ uuid: 'feat-cantrip-expansion', name: 'Cantrip Expansion', slug: 'cantrip-expansion' }],
+            featGrants: [],
+            spells: [],
+          },
+        },
+      },
+      _compendiumCache: {},
+      _buildAttributeContext: jest.fn(() => ({})),
+      _buildIntelligenceBenefitContext: jest.fn(() => ({})),
+      _buildIntBonusSkillContext: jest.fn(() => []),
+      _buildIntBonusLanguageContext: jest.fn(() => []),
+      _buildSkillContext: jest.fn(() => []),
+      _buildSpellContext: jest.fn(async () => ({ showSpells: false })),
+      _isCustomPlanOpen: jest.fn(() => false),
+    };
+
+    const context = await buildLevelContext(planner, ClassRegistry.get(classSlug), {});
+
+    expect(context.classFeat.grantRequirements).toHaveLength(expectedCount);
   });
 
   test('Marshal Dedication selected skill upgrades to expert when already trained', async () => {
