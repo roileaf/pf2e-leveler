@@ -1,3 +1,7 @@
+## 3.12.28
+
+- Fixed character creation getting stuck at 72% ("Waiting for PF2E class option prompts") when the saved equipment list contained spells or effects picked from mixed module packs before 3.12.27. Creation now skips anything that isn't gear.
+
 ## 3.12.27
 
 ### Fixed
