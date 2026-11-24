@@ -38,8 +38,11 @@ async function getAdditionalCompendiumKeys() {
     .filter(Boolean);
   const rawDiscoveredKeys = await discoverRawFeatPackKeys();
   if (configuredKeys.length > 0) {
+    // Once the GM picks feat packs, only the system's own packs are added on top of that choice.
+    const systemPrefix = `${game.system?.id}.`;
+    const officialRawKeys = rawDiscoveredKeys.filter((key) => key.startsWith(systemPrefix));
     return filterAllowedFeatCompendiumKeys([
-      ...new Set([...baseKeys, ...officialDiscoveredKeys, ...rawDiscoveredKeys]),
+      ...new Set([...baseKeys, ...officialDiscoveredKeys, ...officialRawKeys]),
     ]);
   }
 

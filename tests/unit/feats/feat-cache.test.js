@@ -209,6 +209,38 @@ describe('feat cache', () => {
     ]);
   });
 
+  test('skips unselected third-party packs that hold feats once custom feat compendiums are configured', async () => {
+    invalidateCache();
+    global._testSettings = {
+      'pf2e-leveler': {
+        customCompendiums: {
+          feats: ['my-module.feats'],
+        },
+      },
+    };
+
+    const docsByKey = {
+      'pf2e.feats-srd': [{ uuid: 'Compendium.pf2e.feats-srd.Item.A', type: 'feat', system: { category: 'class', traits: { rarity: 'common' } } }],
+      'my-module.feats': [{ uuid: 'Compendium.my-module.feats.Item.B', type: 'feat', system: { category: 'general', traits: { rarity: 'common' } } }],
+      'shared.items': [{ uuid: 'Compendium.shared.items.Item.Caprid', type: 'feat', system: { category: 'ancestry', traits: { rarity: 'common' } } }],
+    };
+    game.packs.get = jest.fn((key) => docsByKey[key]
+      ? { metadata: { packageName: key.split('.')[0] }, getDocuments: jest.fn(async () => docsByKey[key]) }
+      : null);
+    game.packs.values = jest.fn(() => Object.keys(docsByKey).map((key) => ({
+      collection: key,
+      documentName: 'Item',
+      metadata: { packageName: key.split('.')[0], type: 'Item', label: key, id: key },
+      getIndex: jest.fn(async () => [{ type: 'feat', system: { category: 'ancestry' } }]),
+    })));
+
+    const feats = await loadFeats();
+    expect(feats.map((feat) => feat.uuid)).toEqual([
+      'Compendium.pf2e.feats-srd.Item.A',
+      'Compendium.my-module.feats.Item.B',
+    ]);
+  });
+
   test('player compendium restrictions block discovered and custom feat packs that are not allowed', async () => {
     invalidateCache();
     global._testSettings = {
