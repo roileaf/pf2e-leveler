@@ -516,6 +516,82 @@ describe('window focus helpers', () => {
     expect(Number(wrapper.style.zIndex)).toBeGreaterThan(109);
   });
 
+  describe('creation apply prompts', () => {
+    function createApp({ title, zIndex, documentName = null }) {
+      const element = document.createElement('section');
+      element.className = 'application';
+      element.style.zIndex = String(zIndex);
+      document.body.append(element);
+      return {
+        title,
+        element,
+        rendered: true,
+        document: documentName ? { documentName } : undefined,
+        bringToFront: jest.fn(),
+        setPosition: jest.fn(),
+      };
+    }
+
+    function createApplyingWizard() {
+      const actor = createMockActor();
+      actor.getFlag = jest.fn(() => null);
+      actor.setFlag = jest.fn(() => Promise.resolve());
+      const wizard = new CharacterWizard(actor);
+      wizard.element = document.createElement('section');
+      wizard.element.className = 'application';
+      wizard.element.style.zIndex = '200';
+      document.body.append(wizard.element);
+      wizard.bringToFront = jest.fn();
+      wizard.render = jest.fn();
+      wizard.isApplying = true;
+      return wizard;
+    }
+
+    let instances;
+
+    beforeEach(() => {
+      instances = new Map();
+      foundry.applications.instances = instances;
+      ui.windows = {};
+    });
+
+    afterEach(() => {
+      delete foundry.applications.instances;
+      ui.windows = {};
+    });
+
+    test('finds ApplicationV2 prompts opened after creation started', () => {
+      const wizard = createApplyingWizard();
+      instances.set('wizard', wizard);
+      instances.set('old', createApp({ title: 'Old Window', zIndex: 150 }));
+      wizard._startApplyPromptWatcher();
+
+      instances.set('sheet', createApp({ title: 'Quig', zIndex: 160, documentName: 'Actor' }));
+      instances.set('prompt', createApp({ title: 'Select an exocortex.', zIndex: 170 }));
+
+      expect(wizard._detectActiveSystemPrompt()?.title).toBe('Select an exocortex.');
+      wizard._stopApplyPromptWatcher();
+    });
+
+    test('keeps a system prompt above the wizard instead of raising the wizard over it', () => {
+      const wizard = createApplyingWizard();
+      instances.set('wizard', wizard);
+      wizard._startApplyPromptWatcher();
+      const prompt = createApp({ title: 'Select a skill.', zIndex: 170 });
+      instances.set('prompt', prompt);
+
+      jest.advanceTimersByTime(350);
+
+      expect(prompt.bringToFront).toHaveBeenCalled();
+      expect(Number(prompt.element.style.zIndex)).toBeGreaterThan(Number(wizard.element.style.zIndex));
+      expect(wizard._activeSystemPrompt?.title).toBe('Select a skill.');
+
+      jest.advanceTimersByTime(5000);
+      expect(Number(prompt.element.style.zIndex)).toBeGreaterThan(Number(wizard.element.style.zIndex));
+      wizard._stopApplyPromptWatcher();
+    });
+  });
+
   test('wizard stylesheet does not pin the root application below PF2e sheets', () => {
     const fs = require('fs');
     const path = require('path');

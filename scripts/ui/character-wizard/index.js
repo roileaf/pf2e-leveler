@@ -29,7 +29,7 @@ import { loadCommanderTactics, loadCompendium, loadCompendiumCategory, loadAnces
 import { promptReviewRequest, isReviewFeatureActive, isApplyBlockedForActor } from '../../access/review-requests.js';
 import { annotateGuidance, annotateGuidanceBySlug, filterDisallowedForCurrentUser, sortByGuidancePriority } from '../../access/content-guidance.js';
 import { filterPublicationsForCurrentUser } from '../../access/source-classification.js';
-import { renderApplicationInFront, scheduleBringApplicationToFront } from '../shared/window-focus.js';
+import { bringApplicationToFront, getOpenApplications, isApplicationAbove, renderApplicationInFront, scheduleBringApplicationToFront } from '../shared/window-focus.js';
 import { resolveSpellcastingTradition } from '../../data/subclass-spells.js';
 import { mountPlanComments, collectWizardCommentAnchors } from '../plan-comments-ui.js';
 import { getEquipmentTotalCp, getStartingEquipmentBudgetCp } from '../../creation/starting-wealth.js';
@@ -1760,13 +1760,13 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
       this._applyPromptRowsCache = null;
       this._startApplyPromptWatcher();
       this.render(true);
-      this._scheduleFocusAboveActorSheet();
+      this._keepApplyWindowsInFront();
 
       await applyCreation(this.actor, this.data, ({ progress, message }) => {
         this.applyProgress = progress;
         this.applyStatus = message;
         this.render(true);
-        this._scheduleFocusAboveActorSheet();
+        this._keepApplyWindowsInFront();
       });
       await saveCreationData(this.actor, this.data);
       ui.notifications.info(localize('CREATION.CREATION_COMPLETE'));
@@ -1788,28 +1788,39 @@ export class CharacterWizard extends HandlebarsApplicationMixin(ApplicationV2) {
   _startApplyPromptWatcher() {
     this._stopApplyPromptWatcher();
     this._activeSystemPrompt = null;
+    this._appsOpenBeforeApply = new Set(getOpenApplications());
     this._applyPromptWatcher = setInterval(() => {
-      const nextPrompt = this._detectActiveSystemPrompt();
-      this._scheduleFocusAboveActorSheet();
+      const nextPrompt = this._keepApplyWindowsInFront();
       if ((nextPrompt?.title ?? null) === (this._activeSystemPrompt?.title ?? null)) return;
       this._activeSystemPrompt = nextPrompt;
-      nextPrompt?.app?.bringToTop?.();
       if (this.isApplying) this.render({ parts: ['wizard'] });
     }, 350);
+  }
+
+  // The system's choice prompts block creation until answered, so they must stay above the wizard.
+  _keepApplyWindowsInFront() {
+    const prompt = this._detectActiveSystemPrompt();
+    if (!prompt) {
+      this._scheduleFocusAboveActorSheet();
+      return null;
+    }
+    if (!isApplicationAbove(prompt.app, this)) bringApplicationToFront(prompt.app);
+    return prompt;
   }
 
   _stopApplyPromptWatcher() {
     if (this._applyPromptWatcher) clearInterval(this._applyPromptWatcher);
     this._applyPromptWatcher = null;
     this._activeSystemPrompt = null;
+    this._appsOpenBeforeApply = null;
   }
 
   _detectActiveSystemPrompt() {
-    const windows = Object.values(ui.windows ?? {});
-    const currentTitle = this.title;
-    const candidates = windows
-      .filter((app) => app && app.title && app.title !== currentTitle)
-      .map((app) => ({ app, title: String(app.title).trim() }))
+    const openBefore = this._appsOpenBeforeApply ?? new Set();
+    const candidates = getOpenApplications()
+      .filter((app) => app !== this && !openBefore.has(app) && app.rendered !== false)
+      .filter((app) => app.document?.documentName !== 'Actor')
+      .map((app) => ({ app, title: String(app.title ?? '').trim() }))
       .filter((entry) => entry.title.length > 0);
     return candidates.at(-1) ?? null;
   }

@@ -23,6 +23,20 @@ export function renderApplicationInFront(app, options = true, focusOptions = {})
   return renderResult;
 }
 
+// ui.windows only lists ApplicationV1 windows; ApplicationV2 windows live in foundry.applications.instances.
+export function getOpenApplications() {
+  const apps = new Set(Object.values(ui?.windows ?? {}));
+  for (const app of globalThis.foundry?.applications?.instances?.values?.() ?? []) apps.add(app);
+  return [...apps].filter(Boolean);
+}
+
+export function isApplicationAbove(app, otherApp) {
+  const element = getApplicationElement(app);
+  const otherElement = getApplicationElement(otherApp);
+  if (!element || !otherElement) return false;
+  return getNumericZIndex(element) > getNumericZIndex(otherElement);
+}
+
 export function scheduleBringApplicationToFront(app, focusOptions = {}) {
   debugWindowFocus('schedule', () => ({
     app: describeApp(app),
