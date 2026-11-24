@@ -1,4 +1,4 @@
-import { MODULE_ID } from '../constants.js';
+import { EQUIPMENT_ITEM_TYPES, MODULE_ID } from '../constants.js';
 import { getCompendiumKeysForCategory } from '../compendiums/catalog.js';
 import { isRarityAllowedForCurrentUser } from '../access/player-content.js';
 import { annotateGuidance, filterDisallowedForCurrentUser, matchesGuidanceTagFilter, getGuidanceTagLabels, GUIDANCE_TAG_VALUES } from '../access/content-guidance.js';
@@ -1183,7 +1183,8 @@ export async function loadItems() {
     const docs = await pack.getDocuments().catch(() => []);
     const sourcePackage = pack.metadata?.packageName ?? pack.metadata?.package ?? '';
     const sourcePackageLabel = game.modules?.get?.(sourcePackage)?.title ?? sourcePackage ?? key;
-    items.push(...docs.map((doc) => {
+    // Module packs often mix spells, effects and feats in with their gear.
+    items.push(...docs.filter(isEquipmentItem).map((doc) => {
       doc.sourcePack = key;
       doc.sourcePackage = sourcePackage || key;
       doc.sourcePackageLabel = sourcePackageLabel || key;
@@ -1194,7 +1195,7 @@ export async function loadItems() {
   const worldSourcePackage = 'world';
   const worldSourcePackageLabel = compactSourceOwnerLabel(game.world?.title ?? 'World');
   items.push(...getAllWorldItems()
-    .filter((item) => EQUIPMENT_TYPES.has(String(item?.type ?? '').toLowerCase()))
+    .filter(isEquipmentItem)
     .map((item) => {
       item.sourcePack = item.sourcePack ?? null;
       item.sourcePackage = item.sourcePackage ?? worldSourcePackage;
@@ -1212,7 +1213,9 @@ export function invalidateItemCache() {
   _itemCache = null;
 }
 
-const EQUIPMENT_TYPES = new Set(['weapon', 'armor', 'equipment', 'consumable', 'ammo', 'treasure', 'backpack', 'shield', 'kit']);
+function isEquipmentItem(item) {
+  return EQUIPMENT_ITEM_TYPES.has(String(item?.type ?? '').toLowerCase());
+}
 
 function getAllWorldItems() {
   if (!game.items) return [];

@@ -317,6 +317,8 @@ export const CHARACTER_WEALTH = [
   },
 ];
 
+export const EQUIPMENT_ITEM_TYPES = new Set(['weapon', 'armor', 'equipment', 'consumable', 'ammo', 'treasure', 'backpack', 'shield', 'kit']);
+
 /** Item types that qualify as permanent items for Table 10-10 slots. */
 export const PERMANENT_ITEM_TYPES = new Set(['weapon', 'armor', 'equipment', 'shield', 'backpack']);
 

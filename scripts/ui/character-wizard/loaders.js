@@ -1,4 +1,4 @@
-import { ANCESTRY_TRAIT_ALIASES, SUBCLASS_TAGS } from '../../constants.js';
+import { ANCESTRY_TRAIT_ALIASES, EQUIPMENT_ITEM_TYPES, SUBCLASS_TAGS } from '../../constants.js';
 import { getCompendiumKeysForCategory } from '../../compendiums/catalog.js';
 import { filterEntriesByRarityForCurrentUser } from '../../access/player-content.js';
 import { createMixedAncestryHeritage } from '../../heritages/mixed-ancestry.js';
@@ -789,7 +789,7 @@ function matchesWorldCategory(item, category) {
   if (category === 'heritages') return type === 'heritage';
   if (category === 'classes') return type === 'class';
   if (category === 'spells') return type === 'spell';
-  if (category === 'equipment') return EQUIPMENT_TYPES.has(type);
+  if (category === 'equipment') return EQUIPMENT_ITEM_TYPES.has(type);
   if (category === 'feats') return type === 'feat' && !isClassFeatureCategory(item?.system?.category);
   return false;
 }
@@ -814,8 +814,6 @@ function getAllWorldItems() {
   if (typeof game.items.filter === 'function') return game.items.filter(() => true);
   return Array.from(game.items);
 }
-
-const EQUIPMENT_TYPES = new Set(['weapon', 'armor', 'equipment', 'consumable', 'ammo', 'treasure', 'backpack', 'shield', 'kit']);
 
 function collectAncestryMatchTokens(ancestry) {
   const baseTokens = new Set();

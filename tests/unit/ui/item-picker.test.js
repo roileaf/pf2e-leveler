@@ -104,6 +104,25 @@ describe('ItemPicker', () => {
     expect(items.map((item) => item.uuid)).toEqual(['formula-common']);
   });
 
+  test('skips spells, effects and feats from mixed equipment packs', async () => {
+    game.packs.get = jest.fn((key) => {
+      if (key !== 'pf2e.equipment-srd') return null;
+      return {
+        metadata: { packageName: 'pf2e', package: 'pf2e' },
+        getDocuments: jest.fn(async () => [
+          { uuid: 'ammo', name: 'Projectile Ammo', type: 'ammo', system: { traits: { rarity: 'common', value: [] } } },
+          { uuid: 'spell', name: 'Dynamic Telekinetic Projectile', type: 'spell', system: { traits: { rarity: 'common', value: [] } } },
+          { uuid: 'effect', name: 'Effect: Dynamic Telekinetic Projectile', type: 'effect', system: { traits: { rarity: 'common', value: [] } } },
+          { uuid: 'feat', name: 'Dynamic Stride', type: 'feat', system: { traits: { rarity: 'common', value: [] } } },
+        ]),
+      };
+    });
+
+    const items = await loadItems();
+
+    expect(items.map((item) => item.uuid)).toEqual(['ammo']);
+  });
+
   test('uses custom formula grant title and empty copy', async () => {
     const picker = new ItemPicker({ name: 'Actor' }, jest.fn(), {
       title: 'Bomber: Formula',

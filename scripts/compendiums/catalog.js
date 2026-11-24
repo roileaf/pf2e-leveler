@@ -1,4 +1,4 @@
-import { MODULE_ID } from '../constants.js';
+import { EQUIPMENT_ITEM_TYPES, MODULE_ID } from '../constants.js';
 import { getAllowedCompendiumKeysForCurrentUser } from '../access/player-content.js';
 import {
   getDefaultPackKeysForCategory,
@@ -51,7 +51,7 @@ export const COMPENDIUM_CATEGORY_DEFINITIONS = {
   equipment: {
     labelKey: 'PF2E_LEVELER.SETTINGS.COMPENDIUM_CATEGORIES.EQUIPMENT',
     defaultKeys: ['pf2e.equipment-srd'],
-    matches: (pack, index) => isItemPack(pack) && index.some((entry) => EQUIPMENT_TYPES.has(entry.type)),
+    matches: (pack, index) => isItemPack(pack) && index.some((entry) => EQUIPMENT_ITEM_TYPES.has(entry.type)),
   },
   actions: {
     labelKey: 'PF2E_LEVELER.SETTINGS.COMPENDIUM_CATEGORIES.ACTIONS',
@@ -67,8 +67,6 @@ export const COMPENDIUM_CATEGORY_DEFINITIONS = {
     matches: (pack, index) => isItemPack(pack) && index.some((entry) => entry.type === 'deity'),
   },
 };
-
-const EQUIPMENT_TYPES = new Set(['weapon', 'armor', 'equipment', 'consumable', 'ammo', 'treasure', 'backpack', 'shield', 'kit']);
 
 export function getCompendiumCategoryKeys() {
   return Object.keys(COMPENDIUM_CATEGORY_DEFINITIONS);
@@ -364,7 +362,7 @@ function hasAdditionalRecognizedContent(index, category) {
     else if (type === 'spell') categories.add('spells');
     else if (type === 'action') categories.add('actions');
     else if (type === 'deity') categories.add('deities');
-    else if (EQUIPMENT_TYPES.has(type)) categories.add('equipment');
+    else if (EQUIPMENT_ITEM_TYPES.has(type)) categories.add('equipment');
     else if (isClassFeatureIndexEntry(entry) || entryCategory === 'classfeature' || entryCategory === 'class-feature') categories.add('classFeatures');
     else if (isFeatIndexEntry(entry)) categories.add('feats');
   }
@@ -393,7 +391,7 @@ function getRecognizedContentCategories(index) {
     else if (type === 'spell') categories.add('spells');
     else if (type === 'action') categories.add('actions');
     else if (type === 'deity') categories.add('deities');
-    else if (EQUIPMENT_TYPES.has(type)) categories.add('equipment');
+    else if (EQUIPMENT_ITEM_TYPES.has(type)) categories.add('equipment');
     else if (isClassFeatureIndexEntry(entry) || entryCategory === 'classfeature' || entryCategory === 'class-feature') categories.add('classFeatures');
     else if (isFeatIndexEntry(entry)) categories.add('feats');
   }
