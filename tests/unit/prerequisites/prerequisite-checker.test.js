@@ -35,6 +35,26 @@ describe('checkPrerequisites', () => {
     },
   };
 
+  test('accepts skill ranks worded "master at" like Doublespeak', () => {
+    const feat = { system: { prerequisites: { value: [{ value: 'master at Deception' }] } } };
+    expect(checkPrerequisites(feat, { ...buildState, skills: { deception: 3 } }).met).toBe(true);
+    expect(checkPrerequisites(feat, { ...buildState, skills: { deception: 2 } }).met).toBe(false);
+  });
+
+  test('skips a prerequisite the archetype waives for its additional feats', () => {
+    const feat = {
+      system: {
+        traits: { value: ['bard'] },
+        prerequisites: { value: [{ value: 'enigma muse' }, { value: 'expert in Athletics' }] },
+      },
+    };
+    expect(checkPrerequisites(feat, buildState).met).toBe(false);
+
+    const waived = checkPrerequisites(feat, buildState, { waivedPrerequisites: new Set(['enigma-muse']) });
+    expect(waived.met).toBe(true);
+    expect(waived.results.map((result) => result.text)).toEqual(['expert in Athletics']);
+  });
+
   test('feat with no prerequisites is met', () => {
     const feat = { system: { prerequisites: { value: [] } } };
     const result = checkPrerequisites(feat, buildState);

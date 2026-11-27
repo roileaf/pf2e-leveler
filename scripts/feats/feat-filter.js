@@ -378,6 +378,38 @@ export async function collectAdditionalArchetypeFeatTraits(feats, ownedFeatSlugs
   return additionalFeatTraits;
 }
 
+// Some dedications waive a prerequisite for their additional feats, e.g. Loremaster: "You can take
+// feats in the loremaster's additional feats entry even if you don't meet the Enigma Muse prerequisite."
+const ADDITIONAL_FEAT_PREREQUISITE_WAIVER_PATTERN =
+  /additional feats entry even if you don['’]t meet the (.+?) prerequisites?/iu;
+
+export async function collectAdditionalArchetypeFeatWaivedPrerequisites(feats, ownedFeatSlugs, options = {}) {
+  const ownedSlugs = ownedFeatSlugs instanceof Set ? ownedFeatSlugs : new Set(ownedFeatSlugs ?? []);
+  const waivedPrerequisites = new Map();
+  const documentResolver = options.documentResolver ?? defaultDocumentResolver;
+
+  for (const feat of feats) {
+    const slug = getFeatFilterSlug(feat);
+    if (!slug || !ownedSlugs.has(slug) || !isArchetypeDedication(feat)) continue;
+
+    const description = String(feat.system?.description?.value ?? '')
+      .replace(/@UUID\[[^\]]+\]\{([^}]+)\}/gu, '$1')
+      .replace(/<[^>]+>/gu, ' ');
+    const waived = getFeatFilterSlug({ name: description.match(ADDITIONAL_FEAT_PREREQUISITE_WAIVER_PATTERN)?.[1] });
+    if (!waived) continue;
+
+    const parsedEntries = await collectAdditionalFeatEntriesFromDedication(feat, documentResolver, feats);
+    for (const entry of parsedEntries) {
+      for (const key of getAdditionalArchetypeMatchKeys(entry, feats)) {
+        if (!waivedPrerequisites.has(key)) waivedPrerequisites.set(key, new Set());
+        waivedPrerequisites.get(key).add(waived);
+      }
+    }
+  }
+
+  return waivedPrerequisites;
+}
+
 function buildCategoryQuery(category, actor, buildState) {
   switch (category) {
     case 'custom':

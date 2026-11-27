@@ -5,6 +5,7 @@ import {
   getFeatsForSelection,
   collectAdditionalArchetypeFeatLevels,
   collectAdditionalArchetypeFeatTraits,
+  collectAdditionalArchetypeFeatWaivedPrerequisites,
   getAdditionalArchetypeMatchKeys,
   filterBySearch,
   filterBySkill,
@@ -79,6 +80,7 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     this._publicationFilterInitialized = false;
     this.additionalArchetypeFeatLevels = new Map();
     this.additionalArchetypeFeatTraits = new Map();
+    this.additionalArchetypeFeatWaivedPrerequisites = new Map();
     this.standardizedAncestryFeatUuids = new Set();
     this.accessibleStandardizedAncestryFeatUuids = new Set();
     this.enforcePrerequisites = game.settings.get(MODULE_ID, 'enforcePrerequisites');
@@ -226,31 +228,23 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
           !allCachedFeats.some((cached) => this._getFeatUuid(cached) === this._getFeatUuid(feat)),
       ),
     ];
-    this.additionalArchetypeFeatLevels = [
+    const offersAdditionalArchetypeFeats = [
       'archetype',
       'class',
       'dualClass',
       'general',
       'skill',
       'custom',
-    ].includes(this.category)
-      ? await collectAdditionalArchetypeFeatLevels(
-          availableFeats,
-          this.buildState?.feats ?? new Set(),
-        )
+    ].includes(this.category);
+    const ownedFeatSlugs = this.buildState?.feats ?? new Set();
+    this.additionalArchetypeFeatLevels = offersAdditionalArchetypeFeats
+      ? await collectAdditionalArchetypeFeatLevels(availableFeats, ownedFeatSlugs)
       : new Map();
-    this.additionalArchetypeFeatTraits = [
-      'archetype',
-      'class',
-      'dualClass',
-      'general',
-      'skill',
-      'custom',
-    ].includes(this.category)
-      ? await collectAdditionalArchetypeFeatTraits(
-          availableFeats,
-          this.buildState?.feats ?? new Set(),
-        )
+    this.additionalArchetypeFeatTraits = offersAdditionalArchetypeFeats
+      ? await collectAdditionalArchetypeFeatTraits(availableFeats, ownedFeatSlugs)
+      : new Map();
+    this.additionalArchetypeFeatWaivedPrerequisites = offersAdditionalArchetypeFeats
+      ? await collectAdditionalArchetypeFeatWaivedPrerequisites(availableFeats, ownedFeatSlugs)
       : new Map();
     const categoryFeats = getFeatsForSelection(
       availableFeats,
@@ -445,7 +439,9 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       const cacheKey = `${this._buildStateSignature}:${this._getFeatUuid(feat) ?? feat.slug ?? feat.name}`;
       let check = this._prereqCache.get(cacheKey);
       if (!check) {
-        check = checkPrerequisites(feat, this._getPrerequisiteBuildState(feat));
+        check = checkPrerequisites(feat, this._getPrerequisiteBuildState(feat), {
+          waivedPrerequisites: this._getWaivedPrerequisites(feat),
+        });
         this._prereqCache.set(cacheKey, check);
       }
 
@@ -1349,6 +1345,14 @@ export class FeatPicker extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _getAdditionalArchetypeFeatKeys(feat) {
     return getAdditionalArchetypeMatchKeys(feat);
+  }
+
+  _getWaivedPrerequisites(feat) {
+    const waived = new Set();
+    for (const key of this._getAdditionalArchetypeFeatKeys(feat)) {
+      for (const prerequisite of this.additionalArchetypeFeatWaivedPrerequisites.get(key) ?? []) waived.add(prerequisite);
+    }
+    return waived;
   }
 
   _getTraitFilterValues(feat) {

@@ -45,9 +45,10 @@ const SUBCLASS_REQUIREMENT_OWNERS = Object.entries(SUBCLASS_TAGS)
   })
   .filter((entry) => entry.classSlug && entry.subclassSlug);
 
-export function checkPrerequisites(feat, buildState) {
+// `waivedPrerequisites` holds normalized prerequisite names an archetype lets the character skip.
+export function checkPrerequisites(feat, buildState, { waivedPrerequisites = null } = {}) {
   const parsed = filterClassBranchPrerequisites(
-    parseAllPrerequisiteNodes(feat),
+    dropWaivedPrerequisites(parseAllPrerequisiteNodes(feat), waivedPrerequisites),
     feat,
     buildState,
   );
@@ -78,6 +79,11 @@ export function grantWaivesAttributePrerequisites(sourceFeat, buildState) {
     ? buildState.heritageAliases
     : new Set(buildState?.heritageAliases ?? []);
   return aliases.has(heritage);
+}
+
+function dropWaivedPrerequisites(nodes, waivedPrerequisites) {
+  if (!waivedPrerequisites?.size) return nodes;
+  return nodes.filter((node) => !waivedPrerequisites.has(normalizeSlug(node?.text)));
 }
 
 function filterClassBranchPrerequisites(nodes, feat, buildState) {

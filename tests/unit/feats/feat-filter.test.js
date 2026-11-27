@@ -1,6 +1,7 @@
 import {
   featMatchesSkills,
   collectAdditionalArchetypeFeatLevels,
+  collectAdditionalArchetypeFeatWaivedPrerequisites,
   filterFeatsByCategory,
   filterByArchetypeRestrictions,
   getFeatsForSelection,
@@ -122,6 +123,29 @@ describe('filterFeatsByCategory', () => {
       expect.objectContaining({ name: 'Dual-Weapon Warrior Dedication' }),
       expect.objectContaining({ name: 'Quick Draw' }),
     ]));
+  });
+
+  test('reads the prerequisite a dedication waives for its additional feats', async () => {
+    const base = makeFeat('Loremaster Dedication', 2, ['archetype', 'dedication']);
+    const dedication = {
+      ...base,
+      system: {
+        ...base.system,
+        description: {
+          value: '<p>You can take feats in the loremaster\'s additional feats entry even if you don\'t meet the '
+            + '@UUID[Compendium.pf2e.classfeatures.Item.4ripp6EfdVpS0d60]{Enigma Muse} prerequisite.</p>'
+            + '<p><strong>Additional Feats:</strong> 8th Assured Knowledge</p>',
+        },
+      },
+    };
+    const assuredKnowledge = makeFeat('Assured Knowledge', 6, ['bard']);
+    const feats = [dedication, assuredKnowledge];
+
+    const waived = await collectAdditionalArchetypeFeatWaivedPrerequisites(feats, new Set(['loremaster-dedication']));
+    expect(waived.get('assured-knowledge')).toEqual(new Set(['enigma-muse']));
+
+    const unowned = await collectAdditionalArchetypeFeatWaivedPrerequisites(feats, new Set());
+    expect(unowned.size).toBe(0);
   });
 
   test('class feat filtering includes additional archetype feats unlocked by an owned dedication', async () => {

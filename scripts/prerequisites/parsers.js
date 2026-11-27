@@ -39,7 +39,8 @@ const RANK_NAME_PATTERN = [
   'meister',
   'legende',
 ].join('|');
-const RANK_CONNECTOR_PATTERN = '(?:in|en)';
+// A few feats say "master at Deception" instead of "master in Deception".
+const RANK_CONNECTOR_PATTERN = '(?:in|en|at)';
 const OR_WORD_PATTERN = '(?:or|ou)';
 const AND_WORD_PATTERN = '(?:and|et)';
 
