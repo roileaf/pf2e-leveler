@@ -1,3 +1,10 @@
+## 3.12.36
+
+### Fixed
+
+- **Doublespeak no longer shows as unavailable** - Its prerequisite is worded "master at Deception" in the system data, and the planner only understood "master in". Skill rank prerequisites written with "at" are now recognised
+- **Loremaster additional feats ignore the Enigma Muse prerequisite** - Loremaster Dedication lets you take its additional feats, such as Assured Knowledge, without the Enigma Muse. The feat picker now honours that, and any other dedication worded the same way
+
 ## 3.12.35
 
 ### Fixed
