@@ -1,3 +1,10 @@
+## 3.12.38
+
+### Fixed
+
+- **Mystics and witchwarpers get their connection and paradox spells (Starfinder)** - The connection or paradox cantrip and 1st-rank spell are added at character creation, and each new spell rank adds its granted spell automatically, so you pick one fewer. This covers spells that aren't on your tradition's list, such as Wave of Warning
+- **Learning a known spell at a higher rank no longer gets skipped** - When a spontaneous caster picked a spell they already knew at a lower rank, applying the level treated it as a duplicate and left it out
+
 ## 3.12.37
 
 ### Fixed
