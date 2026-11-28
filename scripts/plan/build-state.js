@@ -917,8 +917,7 @@ export function getIntelligenceBenefitCount(actor, plan, level) {
   if (!levelData?.abilityBoosts?.includes('int')) return 0;
 
   const actorLevel = Number(plan?.importedFromActor?.actorLevel ?? actor?.system?.details?.level?.value ?? 0);
-  const isHistorical = plan?.importedFromActor?.hideHistoricalSkillIncreases === true && Number.isFinite(actorLevel) && level < actorLevel;
-  const knownBeforeRaw = isHistorical ? getVerifiedHistoricalRawIntBeforeLevel(actor, plan, level, actorLevel) : null;
+  const knownBeforeRaw = getVerifiedRawIntBeforeLevel(actor, plan, level, actorLevel);
   const beforeRaw = Number.isFinite(knownBeforeRaw) ? knownBeforeRaw : getPlannedRawIntBeforeLevel(actor, plan, level);
   return Math.max(0, Math.trunc(applyAbilityBoostValue(beforeRaw)) - Math.trunc(beforeRaw));
 }
@@ -1278,8 +1277,12 @@ function getLevelOneIntModifier(actor) {
   return Math.trunc(intMod);
 }
 
-function getVerifiedHistoricalRawIntBeforeLevel(actor, plan, targetLevel, actorLevel) {
-  const maxLevel = Number.isFinite(actorLevel) ? Math.max(targetLevel, actorLevel) : targetLevel;
+// Replays Int from the actor's build choices. PF2e truncates prepared modifiers, so a partial
+// boost (+4.5) reads back as +4; only a replay can tell it apart from a whole +4. The replay is
+// trusted only when it lands on the actor's real modifier at the actor's level.
+function getVerifiedRawIntBeforeLevel(actor, plan, targetLevel, actorLevel) {
+  if (!Number.isFinite(actorLevel) || actorLevel < 1) return null;
+  const maxLevel = Math.max(targetLevel, actorLevel);
   const initialRaw = getKnownInitialIntModifier(actor, plan);
   if (!Number.isFinite(initialRaw)) return null;
 
@@ -1289,15 +1292,16 @@ function getVerifiedHistoricalRawIntBeforeLevel(actor, plan, targetLevel, actorL
   };
   let raw = initialRaw;
   let beforeTarget = null;
+  let atActorLevel = actorLevel < MIN_PLAN_LEVEL ? raw : null;
 
   for (let level = MIN_PLAN_LEVEL; level <= maxLevel; level++) {
     if (level === targetLevel) beforeTarget = raw;
-    if (!normalizeStoredBoostBucket(boostEntries[level]).includes('int')) continue;
-    raw = applyAbilityBoostValue(raw);
+    if (normalizeStoredBoostBucket(boostEntries[level]).includes('int')) raw = applyAbilityBoostValue(raw);
+    if (level === actorLevel) atActorLevel = raw;
   }
 
   if (!Number.isFinite(beforeTarget)) return null;
-  return rawMatchesActorInt(raw, actor) ? beforeTarget : null;
+  return rawMatchesActorInt(atActorLevel, actor) ? beforeTarget : null;
 }
 
 function rawMatchesActorInt(raw, actor) {

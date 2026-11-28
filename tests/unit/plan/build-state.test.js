@@ -2764,4 +2764,20 @@ describe('getIntelligenceBenefitCount partial boosts', () => {
     expect(getIntelligenceBenefitCount(actor, plan, 10)).toBe(0);
     expect(getIntelligenceBenefitCount(actor, plan, 15)).toBe(1);
   });
+
+  it('recognises an applied partial boost even though PF2e truncates the modifier to +4', () => {
+    const actor = createFighter(10, 4, {
+      ancestry: ['int'],
+      background: ['int'],
+      1: ['str', 'int'],
+      5: ['int'],
+      10: ['int'],
+    });
+    const plan = createPlan('fighter');
+    for (const level of [5, 10, 15]) setLevelBoosts(plan, level, ['int', 'str', 'dex', 'con']);
+
+    expect(getIntelligenceBenefitCount(actor, plan, 5)).toBe(1);
+    expect(getIntelligenceBenefitCount(actor, plan, 10)).toBe(0);
+    expect(getIntelligenceBenefitCount(actor, plan, 15)).toBe(1);
+  });
 });
