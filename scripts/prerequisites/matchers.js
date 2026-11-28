@@ -1,3 +1,5 @@
+import { EXTRA_HANDS_SOURCES } from '../constants.js';
+
 export function matchSkill(parsed, buildState) {
   const currentRank = buildState.skills?.[parsed.skill] ?? 0;
   return {
@@ -241,6 +243,21 @@ export function matchClassHp(parsed, buildState) {
         return currentValue <= threshold;
       })
       : null,
+    text: parsed.text,
+  };
+}
+
+export function matchHandCount(parsed, buildState) {
+  if (parsed.count <= 2) return { met: true, text: parsed.text };
+  const ancestry = normalizeText(buildState.ancestrySlug);
+  const heritages = buildState.heritageAliases instanceof Set
+    ? buildState.heritageAliases
+    : new Set([buildState.heritageSlug].filter(Boolean));
+  const feats = buildState.feats instanceof Set ? buildState.feats : new Set(buildState.feats ?? []);
+  return {
+    met: EXTRA_HANDS_SOURCES.ancestries.includes(ancestry)
+      || EXTRA_HANDS_SOURCES.heritages.some((slug) => heritages.has(slug))
+      || EXTRA_HANDS_SOURCES.feats.some((slug) => feats.has(slug)),
     text: parsed.text,
   };
 }

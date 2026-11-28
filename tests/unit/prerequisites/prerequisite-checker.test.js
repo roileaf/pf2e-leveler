@@ -1629,3 +1629,23 @@ describe('grantWaivesAttributePrerequisites', () => {
     expect(grantWaivesAttributePrerequisites(legacy, { heritageAliases: new Set(['half-elf']) })).toBe(true);
   });
 });
+
+describe('hand count prerequisites', () => {
+  const doubleDraw = { system: { prerequisites: { value: [{ value: 'three or more hands' }] } } };
+
+  test('kasatha and other multi-armed ancestries meet three or more hands', () => {
+    expect(checkPrerequisites(doubleDraw, { ancestrySlug: 'kasatha', feats: new Set() }).met).toBe(true);
+    expect(checkPrerequisites(doubleDraw, { ancestrySlug: 'skittermander', feats: new Set() }).met).toBe(true);
+  });
+
+  test('a feat that adds arms meets it', () => {
+    const buildState = { ancestrySlug: 'copaxi', feats: new Set(['four-armed-copaxi']) };
+    expect(checkPrerequisites(doubleDraw, buildState).met).toBe(true);
+  });
+
+  test('a two-handed character does not', () => {
+    const result = checkPrerequisites(doubleDraw, { ancestrySlug: 'human', feats: new Set() });
+    expect(result.met).toBe(false);
+    expect(result.results).toEqual([{ met: false, text: 'three or more hands' }]);
+  });
+});

@@ -7218,4 +7218,62 @@ describe('CharacterWizard subclass choice-set parsing', () => {
     expect(choiceSet.options.map((option) => option.label)).toEqual(['Daze', 'Telekinetic Rend']);
     expect(wizard._loadCompendium).not.toHaveBeenCalledWith('pf2e.feats-srd');
   });
+
+  describe('plain-word choices that collide with a feat slug', () => {
+    const danceFeat = createDoc({ uuid: 'Compendium.pf2e.feats-srd.Item.dance', name: 'Dance!', slug: 'dance' });
+    const virtuosicPerformerRule = {
+      key: 'ChoiceSet',
+      flag: 'performanceType',
+      prompt: 'PF2E.SpecificRule.VirtuosicPerformer.Prompt',
+      choices: [
+        { label: 'PF2E.SpecificRule.VirtuosicPerformer.Acting', value: 'acting' },
+        { label: 'PF2E.SpecificRule.VirtuosicPerformer.Dance', value: 'dance' },
+        { label: 'PF2E.SpecificRule.VirtuosicPerformer.Winds', value: 'winds' },
+      ],
+    };
+
+    function createWizardWithDanceFeat() {
+      const wizard = new CharacterWizard(createMockActor());
+      wizard._loadCompendium = jest.fn(async (key) => (key === 'pf2e.feats-srd'
+        ? [{ uuid: danceFeat.uuid, name: danceFeat.name, slug: 'dance', type: 'feat' }]
+        : []));
+      wizard._getCachedDocument = jest.fn(async (uuid) => (uuid === danceFeat.uuid ? danceFeat : null));
+      return wizard;
+    }
+
+    it('keeps Virtuosic Performer specialties as plain options when parsing', async () => {
+      const [choiceSet] = await parseChoiceSets(createWizardWithDanceFeat(), [virtuosicPerformerRule], {}, {
+        name: 'Virtuosic Performer',
+        slug: 'virtuosic-performer',
+      });
+
+      expect(choiceSet.options.map((option) => option.value)).toEqual(['acting', 'dance', 'winds']);
+      expect(choiceSet.options.every((option) => !option.uuid)).toBe(true);
+    });
+
+    it('keeps them plain when hydrating', async () => {
+      const wizard = createWizardWithDanceFeat();
+      wizard._getClassTrainedSkills = jest.fn(async () => []);
+
+      const [choiceSet] = await hydrateChoiceSets(wizard, [{
+        flag: 'performanceType',
+        prompt: 'Select a type of performance.',
+        options: virtuosicPerformerRule.choices,
+      }], {});
+
+      expect(choiceSet.options.map((option) => option.value)).toEqual(['acting', 'dance', 'winds']);
+      expect(choiceSet.isFeatChoice).toBe(false);
+    });
+
+    it('still resolves a choice set whose every value is a feat slug', async () => {
+      const [choiceSet] = await parseChoiceSets(createWizardWithDanceFeat(), [{
+        key: 'ChoiceSet',
+        flag: 'feat',
+        prompt: 'Select a feat.',
+        choices: [{ value: 'dance' }],
+      }], {}, { name: 'Test Feat', slug: 'test-feat' });
+
+      expect(choiceSet.options.map((option) => option.uuid)).toEqual([danceFeat.uuid]);
+    });
+  });
 });

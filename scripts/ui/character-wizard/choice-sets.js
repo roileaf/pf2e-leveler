@@ -240,8 +240,9 @@ export async function hydrateChoiceSets(wizard, choiceSets, currentChoices) {
   const skillState = createSkillStateMap(skillContext);
   const hydratedChoiceSets = await Promise.all((choiceSets ?? []).map(async (cs) => {
     const isKineticImpulseChoice = isKineticistImpulseChoiceSetForWizard(wizard, cs);
-    const options = await Promise.all((cs.options ?? []).map(async (opt) => {
-      if (isRawValueChoiceSet(cs)) return normalizeRawChoiceOption(opt);
+    const rawOptions = cs.options ?? [];
+    const needsEnrichment = rawOptions.map((opt) => {
+      if (isRawValueChoiceSet(cs)) return false;
       const value = extractChoiceValue(opt);
       const needsHydration = !opt?.uuid
         && (typeof value === 'string' && value.startsWith('Compendium.')
@@ -251,9 +252,18 @@ export async function hydrateChoiceSets(wizard, choiceSets, currentChoices) {
       const needsLevelHydration = isKineticImpulseChoice
         && extractChoiceUuid(opt)
         && !Number.isFinite(Number(opt?.level));
-      if (!needsHydration && !needsLevelHydration) return opt;
-      return enrichChoiceOption(wizard, opt, { preserveRawValue: shouldPreserveRawChoiceValue(cs) });
-    }));
+      return needsHydration || needsLevelHydration;
+    });
+    const enriched = await enrichChoiceOptions(
+      wizard,
+      rawOptions.filter((_opt, index) => needsEnrichment[index]),
+      { preserveRawValue: shouldPreserveRawChoiceValue(cs) },
+    );
+    let enrichedIndex = 0;
+    const options = rawOptions.map((opt, index) => {
+      if (isRawValueChoiceSet(cs)) return normalizeRawChoiceOption(opt);
+      return needsEnrichment[index] ? enriched[enrichedIndex++] : opt;
+    });
     return {
       ...cs,
       options: isKineticImpulseChoice ? options.filter((option) => Number(option?.level ?? 0) === 1) : options,
@@ -1364,8 +1374,9 @@ async function resolveChoiceSetOptions(wizard, rule, currentChoices = {}, source
         .map((c) => normalizeRawChoiceOption(c));
     }
 
-    return Promise.all(validChoices
-      .map((c) => enrichChoiceOption(wizard, c, { preserveRawValue: shouldPreserveRawChoiceValue(rule, sourceItem) })));
+    return enrichChoiceOptions(wizard, validChoices, {
+      preserveRawValue: shouldPreserveRawChoiceValue(rule, sourceItem),
+    });
   }
 
   if (isSkillChoiceSet(rule)) {
@@ -2347,7 +2358,24 @@ function normalizeRawChoiceOption(choice) {
   };
 }
 
-async function enrichChoiceOption(wizard, choice, { preserveRawValue = false } = {}) {
+// Plain-word choices ("acting", "dance") can collide with an unrelated feat slug, such as the
+// Starfinder soldier feat Dance!. Slug lookups only count when every plain-word choice finds an item.
+async function enrichChoiceOptions(wizard, choices, options = {}) {
+  const enriched = await Promise.all(choices.map((choice) => enrichChoiceOption(wizard, choice, options)));
+  const slugLookups = choices.map((choice) => !hasCompendiumReference(choice));
+  if (enriched.every((option, index) => !slugLookups[index] || option.uuid)) return enriched;
+
+  return Promise.all(choices.map((choice, index) => (slugLookups[index]
+    ? enrichChoiceOption(wizard, choice, { ...options, skipSlugLookup: true })
+    : enriched[index])));
+}
+
+function hasCompendiumReference(choice) {
+  return !!extractChoiceUuid(choice)?.startsWith('Compendium.')
+    || extractChoiceValue(choice).startsWith('Compendium.');
+}
+
+async function enrichChoiceOption(wizard, choice, { preserveRawValue = false, skipSlugLookup = false } = {}) {
   const value = extractChoiceValue(choice);
   const rawLabel = extractChoiceLabel(choice) || value;
   const label = rawLabel && game.i18n.has(rawLabel) ? game.i18n.localize(rawLabel) : rawLabel;
@@ -2360,7 +2388,7 @@ async function enrichChoiceOption(wizard, choice, { preserveRawValue = false } =
     item = await resolveDocument(wizard, choiceUuid);
   } else if (value.startsWith('Compendium.')) {
     item = await resolveDocument(wizard, value);
-  } else {
+  } else if (!skipSlugLookup) {
     item = await findChoiceItemBySlugOrName(wizard, choice, value, label);
   }
 

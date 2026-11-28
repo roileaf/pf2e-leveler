@@ -110,6 +110,25 @@ export const ANCESTRY_TRAIT_ALIASES = {
 
 export const SPELLBOOK_CLASSES = ['wizard', 'witch', 'magus', 'necromancer', 'technomancer'];
 
+// Starfinder ancestries, heritages and feats that give a character more than two hands.
+export const EXTRA_HANDS_SOURCES = {
+  ancestries: ['kasatha', 'shobhad', 'skittermander'],
+  heritages: ['test-subject-ysoki'],
+  feats: [
+    'additional-arms',
+    'additional-limbs',
+    'ambidextrous-shifter',
+    'extra-hands',
+    'four-arm-brains',
+    'four-armed-copaxi',
+    'grasping-tendrils',
+    'mind-over-matter',
+    'prehensile-tail',
+    'swoltrid',
+    'warmount-shell',
+  ],
+};
+
 export const ADVANCED_FOCUS_FEAT_SLUGS = ['advanced-bloodline', 'advanced-mystery', 'advanced-order', 'advanced-revelation', 'advanced-magic-hack'];
 export const GREATER_FOCUS_FEAT_SLUGS = ['greater-bloodline', 'greater-mystery', 'greater-order', 'greater-revelation', 'greater-magic-hack'];
 

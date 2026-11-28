@@ -168,6 +168,8 @@ const SENSE_PATTERN =
 const DIVINE_FONT_PATTERN = /^(healing|heal|harming|harmful|harm)\s+font$/i;
 const AGE_REQUIREMENT_PATTERN = /^(?:at\s+least\s+)?\d+\s+years?\s+old$/i;
 const LIVING_CREATURE_PATTERN = /^(?:you\s+are\s+)?(?:a\s+)?living\s+creature$/i;
+const HAND_COUNT_PATTERN = /^(two|three|four|five|six|\d+)\s+or\s+more\s+(?:hands|arms)$/i;
+const HAND_COUNT_WORDS = { two: 2, three: 3, four: 4, five: 5, six: 6 };
 const REACTION_IMPLEMENT_PATTERN = /^(?:an?\s+)?implement\s+that\s+grants\s+a\s+reaction$/i;
 
 const PROFICIENCY_SUBJECT_ALIASES = {
@@ -260,6 +262,9 @@ export function parsePrerequisite(text) {
 
   const livingCreatureMatch = tryParseLivingCreatureRequirement(baseText, trimmed);
   if (livingCreatureMatch) return livingCreatureMatch;
+
+  const handCountMatch = tryParseHandCountRequirement(baseText, trimmed);
+  if (handCountMatch) return handCountMatch;
 
   if (REACTION_IMPLEMENT_PATTERN.test(baseText)) {
     return { type: 'implementCapability', capability: 'reaction', text: trimmed };
@@ -526,6 +531,17 @@ function tryParseLivingCreatureRequirement(text, fullText = text) {
   if (!LIVING_CREATURE_PATTERN.test(text)) return null;
   return {
     type: 'livingCreature',
+    text: fullText,
+  };
+}
+
+function tryParseHandCountRequirement(text, fullText = text) {
+  const match = text.match(HAND_COUNT_PATTERN);
+  if (!match) return null;
+  const word = match[1].toLowerCase();
+  return {
+    type: 'handCount',
+    count: HAND_COUNT_WORDS[word] ?? Number(word),
     text: fullText,
   };
 }
@@ -1369,7 +1385,8 @@ function shouldPreserveOrPhrase(text) {
     WIELDING_WEAPON_PATTERN.test(text) ||
     COMPANION_PROHIBITION_PATTERN.test(text) ||
     CURSE_STATE_PATTERN.test(text) ||
-    CHARACTER_ALIGNMENT_PATTERN.test(text)
+    CHARACTER_ALIGNMENT_PATTERN.test(text) ||
+    HAND_COUNT_PATTERN.test(text)
   );
 }
 

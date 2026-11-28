@@ -20,6 +20,7 @@ import {
   matchProficiency,
   matchClassHp,
   matchLivingCreature,
+  matchHandCount,
   matchDeityState,
   matchSanctificationState,
   matchSpellcastingState,
@@ -256,6 +257,8 @@ function evaluateLeaf(parsed, buildState) {
       return wrapLeafResult(matchClassHp(parsed, buildState));
     case 'livingCreature':
       return wrapLeafResult(matchLivingCreature(parsed, buildState));
+    case 'handCount':
+      return wrapLeafResult(matchHandCount(parsed, buildState));
     case 'deityState':
       return wrapLeafResult(matchDeityState(parsed, buildState));
     case 'sanctificationState':
