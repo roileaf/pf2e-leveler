@@ -9,9 +9,21 @@ const SPELL_TRADITIONS = new Set(['arcane', 'divine', 'occult', 'primal']);
 const VARIABLE_SPELLCASTING_TRADITIONS = new Set(['bloodline', 'patron', 'connection', 'paradox']);
 
 export const SUBCLASS_SPELLS = {
+  // mystic — Akashic
+  'akashic': {
+    tradition: 'occult',
+    focusSpells: { "initial": "Compendium.sf2e.spells.Item.mAu69GVbFKYzQM5a", "advanced": "Compendium.sf2e.spells.Item.z0Spgrf92nmaqjCW", "greater": "Compendium.sf2e.spells.Item.CjVOXjuvvTJqC7AD" },
+    grantedSpells: { "1": "Compendium.sf2e.spells.Item.VynaowCerc7B4yvI", "2": "Compendium.sf2e.spells.Item.mnoTqz0gjRmuc4oR", "3": "Compendium.sf2e.spells.Item.ZYoC630tNGutgbE0", "4": "Compendium.sf2e.spells.Item.zvKWclOZ7A53DObE", "5": "Compendium.sf2e.spells.Item.kTzbLqmqPcZwOa5F", "6": "Compendium.sf2e.spells.Item.uqlxMQQeSGWEVjki", "7": "Compendium.sf2e.spells.Item.zdzeVZlKHkMAt2Rf", "8": "Compendium.sf2e.spells.Item.f98vwzcdxafum8ln", "9": "Compendium.sf2e.spells.Item.qsNeG9KZpODSACMq", "cantrip": "Compendium.sf2e.spells.Item.nf8q0zvJDnnkzANe" },
+  },
   // magus — Aloof Firmament
   'aloof-firmament': {
     focusSpells: { "initial": "Compendium.pf2e.spells-srd.Item.2C0ftvzTwYgzb3Qt" },
+  },
+  // witchwarper — Analyst
+  'analyst': {
+    tradition: 'arcane',
+    focusSpells: { "initial": "Compendium.sf2e.spells.Item.KOkGLXwOBAIlczzk", "advanced": "Compendium.sf2e.spells.Item.vL7w8EtvZHlgRKlo", "greater": "Compendium.sf2e.spells.Item.v8JA4sG2tsVP2gOM" },
+    grantedSpells: { "1": "Compendium.sf2e.spells.Item.Gb7SeieEvd0pL2Eh", "2": "Compendium.sf2e.spells.Item.tVTJS07cKDA5rNgc", "3": "Compendium.sf2e.spells.Item.ZYoC630tNGutgbE0", "4": "Compendium.sf2e.spells.Item.VlNcjmYyu95vOUe8", "5": "Compendium.sf2e.spells.Item.CptKtBneM7od45nc", "6": "Compendium.sf2e.spells.Item.uqlxMQQeSGWEVjki", "7": "Compendium.sf2e.spells.Item.rsZ5c0AUyywe5yoK", "8": "Compendium.sf2e.spells.Item.wfleiawxsfhpRRwf", "9": "Compendium.sf2e.spells.Item.qsNeG9KZpODSACMq", "cantrip": "Compendium.sf2e.spells.Item.NkvRoN33RbDg3fl9" },
   },
   // oracle — Ancestors
   'ancestors': {
@@ -21,6 +33,12 @@ export const SUBCLASS_SPELLS = {
   // druid — Animal Order
   'animal-order': {
     focusSpells: { "initial": "Compendium.pf2e.spells-srd.Item.Zmh4ynfnCtwKeAYl" },
+  },
+  // witchwarper — Anomaly
+  'anomaly': {
+    tradition: 'arcane',
+    focusSpells: { "initial": "Compendium.sf2e.spells.Item.TN2pHF9l3k4ZJ7di", "advanced": "Compendium.sf2e.spells.Item.9w90nlUdV5HBRWFm", "greater": "Compendium.sf2e.spells.Item.XoYUZP9OYdDMz4I0" },
+    grantedSpells: { "1": "Compendium.sf2e.spells.Item.7P4eBdqWcgQJAFCa", "2": "Compendium.sf2e.spells.Item.9HpwDN4MYQJnW0LG", "3": "Compendium.sf2e.spells.Item.qkehzRdn7JeGrR6E", "4": "Compendium.sf2e.spells.Item.jyrxfWeeCsrkhNit", "5": "Compendium.sf2e.spells.Item.kOa055FIrO9Smnya", "6": "Compendium.sf2e.spells.Item.a02hsymtiVRQvh3i", "7": "Compendium.sf2e.spells.Item.zdzeVZlKHkMAt2Rf", "8": "Compendium.sf2e.spells.Item.sTpdXXaaKhoGOIxh", "9": "Compendium.sf2e.spells.Item.J3zMwmhIVgI2yzxm", "cantrip": "Compendium.sf2e.spells.Item.jgN33YSYXB8iIHTw" },
   },
   // oracle — Ashes
   'ashes': {
@@ -282,6 +300,12 @@ export const SUBCLASS_SPELLS = {
     focusSpells: { "initial": "Compendium.sf2e.spells.Item.5kzAMtSSpGDJTIWV", "advanced": "Compendium.sf2e.spells.Item.4WIa2Bq7DVgMZfaO", "greater": "Compendium.sf2e.spells.Item.4RKn711m9r9Szu0h" },
     grantedSpells: { "1": "Compendium.sf2e.spells.Item.SbBqa1HStMrV47fb", "2": "Compendium.sf2e.spells.Item.GB1RVtoFPwyH1B9G", "3": "Compendium.sf2e.spells.Item.Cbj7tDkb2ZTp10Cg", "4": "Compendium.sf2e.spells.Item.Y3G6Y6EDgCY0s3fq", "5": "Compendium.sf2e.spells.Item.oXeEbcUdgJGWHGEJ", "6": "Compendium.sf2e.spells.Item.r7ihOgKv19eJQnik", "7": "Compendium.sf2e.spells.Item.AlbpWWN87yGegoAF", "8": "Compendium.sf2e.spells.Item.C2GYCH3TtUFqPfdX", "9": "Compendium.sf2e.spells.Item.4WS7HrFjwNvTn8T2" },
   },
+  // mystic — Elemental
+  'elemental': {
+    tradition: 'primal',
+    focusSpells: { "initial": "Compendium.sf2e.spells.Item.d5dmu4HZ3YyrwcaF", "advanced": "Compendium.sf2e.spells.Item.5apI8Yamauo02VYR", "greater": "Compendium.sf2e.spells.Item.DZOjyZBZUrzkw5q2" },
+    grantedSpells: { "1": "Compendium.sf2e.spells.Item.7P4eBdqWcgQJAFCa", "2": "Compendium.sf2e.spells.Item.Fr58LDSrbndgld9n", "3": "Compendium.sf2e.spells.Item.fI20AVwOzJMHXRdo", "4": "Compendium.sf2e.spells.Item.IarZrgCeaiUqOuRu", "5": "Compendium.sf2e.spells.Item.1K6AYGisvo9gqdhs", "6": "Compendium.sf2e.spells.Item.xS4bqHnbodCwjpqI", "7": "Compendium.sf2e.spells.Item.kGas0LdEAR1WjLGZ", "8": "Compendium.sf2e.spells.Item.x7SPrsRxGb2Vy2nu", "9": "Compendium.sf2e.spells.Item.jrBa9deU2ULFWvSl", "cantrip": "Compendium.sf2e.spells.Item.5y70IWhVV6bVjC9N" },
+  },
   // bard — Enigma
   'enigma': {
     grantedSpells: { "1": "Compendium.pf2e.spells-srd.Item.Gb7SeieEvd0pL2Eh" },
@@ -303,6 +327,18 @@ export const SUBCLASS_SPELLS = {
   'fortrun': {
     focusSpells: { "initial": "Compendium.sf2e.spells.Item.1Wp3rkKJQef7K8Tn", "advanced": "Compendium.sf2e.spells.Item.0rAYoJi9vdj1xIwF", "greater": "Compendium.sf2e.spells.Item.0BaSs02dBiL2ASBO" },
     grantedSpells: { "1": "Compendium.sf2e.spells.Item.gMODOGamz88rgHuf", "2": "Compendium.sf2e.spells.Item.Fr58LDSrbndgld9n", "3": "Compendium.sf2e.spells.Item.o6YCGx4lycsYpww4", "4": "Compendium.sf2e.spells.Item.aqRYNoSvxsVfqglH", "5": "Compendium.sf2e.spells.Item.Ek5XI0aEdZhBgm21", "6": "Compendium.sf2e.spells.Item.yrZA4k2VAqEP8xx7", "7": "Compendium.sf2e.spells.Item.m2xFMNyQiUKQDRaj", "8": "Compendium.sf2e.spells.Item.gLOelTMvex2OgBqV", "9": "Compendium.sf2e.spells.Item.qsNeG9KZpODSACMq" },
+  },
+  // witchwarper — Gap Influenced
+  'gap-influenced': {
+    tradition: 'occult',
+    focusSpells: { "initial": "Compendium.sf2e.spells.Item.tZQpEnaFqwmU4AMZ", "advanced": "Compendium.sf2e.spells.Item.TAbOBvFU8dLzKiWw", "greater": "Compendium.sf2e.spells.Item.YAa1StmuYC2QQ043" },
+    grantedSpells: { "1": "Compendium.sf2e.spells.Item.yXD9uU8w8uFD2OBQ", "2": "Compendium.sf2e.spells.Item.mnoTqz0gjRmuc4oR", "3": "Compendium.sf2e.spells.Item.kR5A0h2a9hY41wav", "4": "Compendium.sf2e.spells.Item.LiGbewa9pO0yjbsY", "5": "Compendium.sf2e.spells.Item.BilnTGuXrof9Dt9D", "6": "Compendium.sf2e.spells.Item.yrZA4k2VAqEP8xx7", "7": "Compendium.sf2e.spells.Item.8kJbiBEjMWG4VUjs", "8": "Compendium.sf2e.spells.Item.wfleiawxsfhpRRwf", "9": "Compendium.sf2e.spells.Item.MJx7DmjsWYzDZ3a4", "cantrip": "Compendium.sf2e.spells.Item.4gBIw4IDrSfFHik4" },
+  },
+  // mystic — Healing
+  'healing': {
+    tradition: 'divine',
+    focusSpells: { "initial": "Compendium.sf2e.spells.Item.d7Mj4nUQe8wg1mV7", "advanced": "Compendium.sf2e.spells.Item.zzi7LUKxKNWr5GsG", "greater": "Compendium.sf2e.spells.Item.MTulATAiOZfZNQ9d" },
+    grantedSpells: { "1": "Compendium.sf2e.spells.Item.rfZpqmj0AIIdkVIs", "2": "Compendium.sf2e.spells.Item.8ViwItUgwT4lOvvb", "3": "Compendium.sf2e.spells.Item.kR5A0h2a9hY41wav", "4": "Compendium.sf2e.spells.Item.s6J1Q0e28Gb42epQ", "5": "Compendium.sf2e.spells.Item.Hnc7eGi7vyZenAIm", "6": "Compendium.sf2e.spells.Item.fd31tAHSSGXyOxW6", "7": "Compendium.sf2e.spells.Item.Z9OrRXKgAPv6Hn5l", "8": "Compendium.sf2e.spells.Item.4MOew29Z1oCX8O28", "9": "Compendium.sf2e.spells.Item.10VcmSYNBrvBphu1", "cantrip": "Compendium.sf2e.spells.Item.SnjhtQYexDtNDdEg" },
   },
   // magus — Inexorable Iron
   'inexorable-iron': {
@@ -346,6 +382,12 @@ export const SUBCLASS_SPELLS = {
   'polymath': {
     grantedSpells: { "1": "Compendium.pf2e.spells-srd.Item.xqmHD8JIjak15lRk" },
   },
+  // witchwarper — Precog
+  'precog': {
+    tradition: 'occult',
+    focusSpells: { "initial": "Compendium.sf2e.spells.Item.1gkdgFwKfAoQx163", "advanced": "Compendium.sf2e.spells.Item.RDvWFbAaXtxrhJMD", "greater": "Compendium.sf2e.spells.Item.HzFdtjvRCFpb0NrS" },
+    grantedSpells: { "1": "Compendium.sf2e.spells.Item.aEM2cttJ2eYcLssW", "2": "Compendium.sf2e.spells.Item.H0WECXb2wvTHT9yk", "3": "Compendium.sf2e.spells.Item.GdlG9a4o0ax0F2HT", "4": "Compendium.sf2e.spells.Item.7Ib3qxIC0bFD3ued", "5": "Compendium.sf2e.spells.Item.g58dbrP7FadZhh6j", "6": "Compendium.sf2e.spells.Item.0XP2XOxT9VSiXFDr", "7": "Compendium.sf2e.spells.Item.AlbpWWN87yGegoAF", "8": "Compendium.sf2e.spells.Item.4MOew29Z1oCX8O28", "9": "Compendium.sf2e.spells.Item.qsNeG9KZpODSACMq", "cantrip": "Compendium.sf2e.spells.Item.sNUvbMoMeLTnYJm8" },
+  },
   // summoner — Psychopomp Eidolon
   'psychopomp-eidolon': {
     grantedSpells: { "2": "Compendium.pf2e.spells-srd.Item.XXqE1eY3w3z6xJCB", "7": "Compendium.pf2e.spells-srd.Item.0873MWM0qKDDv81O" },
@@ -359,6 +401,12 @@ export const SUBCLASS_SPELLS = {
   'resurgent-maelstrom': {
     focusSpells: { "initial": "Compendium.pf2e.spells-srd.Item.eCwsj7wGQK1uBwiH" },
     grantedSpells: { "1": "Compendium.pf2e.spells-srd.Item.EE7Q5BHIrfWNCPtT" },
+  },
+  // mystic — Rhythm
+  'rhythm': {
+    tradition: 'primal',
+    focusSpells: { "initial": "Compendium.sf2e.spells.Item.smCC1LNhMb7Z1lrU", "advanced": "Compendium.sf2e.spells.Item.AlYzxLKWZujnzsjJ", "greater": "Compendium.sf2e.spells.Item.Ii8adgcCejAovsNv" },
+    grantedSpells: { "1": "Compendium.sf2e.spells.Item.5ZZca1GGJs44OxC8", "2": "Compendium.sf2e.spells.Item.wzLkNU3AAqOSKFPR", "3": "Compendium.sf2e.spells.Item.K2WpC3FFoHrqX9Q5", "4": "Compendium.sf2e.spells.Item.Fa1f7VtZitQYrArX", "5": "Compendium.sf2e.spells.Item.BilnTGuXrof9Dt9D", "6": "Compendium.sf2e.spells.Item.RQjSQVZRG497cJhX", "7": "Compendium.sf2e.spells.Item.g9QLswd5uqDdcCjv", "8": "Compendium.sf2e.spells.Item.Jvyy6oVIQsD34MHB", "9": "Compendium.sf2e.spells.Item.FmNDwqMEjeTEGPrY", "cantrip": "Compendium.sf2e.spells.Item.yvs1zN5Pai5U4CJX" },
   },
   // witch — Ripple in the Deep
   'ripple-in-the-deep': {
@@ -433,6 +481,12 @@ export const SUBCLASS_SPELLS = {
   'servoshell': {
     focusSpells: { "initial": "Compendium.sf2e.spells.Item.xNU0CX0Wt0MwOHes", "advanced": "Compendium.sf2e.spells.Item.Ws85nL9EIkPV07CX", "greater": "Compendium.sf2e.spells.Item.Is46i6efWR9TqF3e" },
     grantedSpells: { "1": "Compendium.sf2e.spells.Item.KlJEDmAOk1ztdNFf", "2": "Compendium.sf2e.spells.Item.f8SBoXiXQjlCKqly", "3": "Compendium.sf2e.spells.Item.rBh2PjtbDGAjbcu6", "4": "Compendium.sf2e.spells.Item.Nf6GqoHkNbfWJDQT", "5": "Compendium.sf2e.spells.Item.7WtiWJRYZhT6a9Ey", "6": "Compendium.sf2e.spells.Item.OsOhx3TGIZ7AhD0P", "7": "Compendium.sf2e.spells.Item.fRT0T9sbd8zWc1q9", "8": "Compendium.sf2e.spells.Item.Y3egStSTzL8k86qc", "9": "Compendium.sf2e.spells.Item.64DDZxOrmr4ddqs2" },
+  },
+  // mystic — Shadow
+  'shadow': {
+    tradition: 'divine',
+    focusSpells: { "initial": "Compendium.sf2e.spells.Item.uh9Br4yrKvJA6zq0", "advanced": "Compendium.sf2e.spells.Item.rluzzX2ml4yFWnYw", "greater": "Compendium.sf2e.spells.Item.pgjlPNfXCpEYyLVu" },
+    grantedSpells: { "1": "Compendium.sf2e.spells.Item.k34hDOfIIMAxNL4a", "2": "Compendium.sf2e.spells.Item.XXqE1eY3w3z6xJCB", "3": "Compendium.sf2e.spells.Item.WsUwpfmhKrKwoIe3", "4": "Compendium.sf2e.spells.Item.zR67Rt3UMHKC5evy", "5": "Compendium.sf2e.spells.Item.IqJ9URobmJ9L9UBG", "6": "Compendium.sf2e.spells.Item.WPXzPl7YbMEIGWfi", "7": "Compendium.sf2e.spells.Item.0jadeyQIItIuRgeH", "8": "Compendium.sf2e.spells.Item.wfleiawxsfhpRRwf", "9": "Compendium.sf2e.spells.Item.MJx7DmjsWYzDZ3a4", "cantrip": "Compendium.sf2e.spells.Item.0zU8CPejjQFnhZFI" },
   },
   // witch — Silence in Snow
   'silence-in-snow': {

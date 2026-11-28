@@ -495,11 +495,15 @@ async function addPlannedSpells(actor, entries, levelData, classSlug = null, inc
     if (!entry) continue;
 
     const sourceUuid = spell.uuid ?? spellPlan.uuid;
+    // A repertoire can hold the same spell at several ranks, so only the same rank counts as a duplicate.
+    const isRepertoire = entry.system?.prepared?.value === 'spontaneous';
+    const plannedRank = Math.max(Number(spellPlan.rank ?? 0), Number(spell.system?.level?.value ?? 0));
     const existing = sourceUuid
       ? actor.items?.find((item) =>
         item.type === 'spell'
         && (item.sourceId ?? item.flags?.core?.sourceId) === sourceUuid
-        && item.system?.location?.value === entry.id)
+        && item.system?.location?.value === entry.id
+        && (!isRepertoire || [-1, plannedRank].includes(getSpellSelectionRank(item))))
       : null;
     if (existing) continue;
 

@@ -16,6 +16,27 @@ describe('resolveSubclassSpells', () => {
     }
   });
 
+  test('resolves mystic connection and witchwarper paradox spells', () => {
+    expect(resolveSubclassSpells('healing')).toEqual({
+      cantrip: 'Compendium.sf2e.spells.Item.SnjhtQYexDtNDdEg',
+      rank1: 'Compendium.sf2e.spells.Item.rfZpqmj0AIIdkVIs',
+      focusSpell: 'Compendium.sf2e.spells.Item.d7Mj4nUQe8wg1mV7',
+    });
+    expect(resolveSubclassSpells('analyst', {}, 2)).toEqual(
+      expect.objectContaining({ grantedSpell: 'Compendium.sf2e.spells.Item.tVTJS07cKDA5rNgc' }),
+    );
+    const subclasses = {
+      mystic: ['akashic', 'elemental', 'healing', 'rhythm', 'shadow'],
+      witchwarper: ['analyst', 'anomaly', 'gap-influenced', 'precog'],
+    };
+    for (const slug of Object.values(subclasses).flat()) {
+      expect(Object.keys(SUBCLASS_SPELLS[slug].grantedSpells)).toHaveLength(10);
+      expect(Object.keys(SUBCLASS_SPELLS[slug].focusSpells)).toEqual(['initial', 'advanced', 'greater']);
+    }
+    expect(resolveSpellcastingTradition('connection', { slug: 'shadow' })).toBe('divine');
+    expect(resolveSpellcastingTradition('paradox', { slug: 'gap-influenced' })).toBe('occult');
+  });
+
   test('maps all three Time mystery revelation spells to their correct tiers', () => {
     expect(SUBCLASS_SPELLS.time.focusSpells).toEqual({
       initial: 'Compendium.pf2e.spells-srd.Item.UbHK19RYbxRXWgWX',

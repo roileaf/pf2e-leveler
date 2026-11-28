@@ -4,6 +4,7 @@ import { CLERIC } from '../../../scripts/classes/cleric.js';
 import { DRUID } from '../../../scripts/classes/druid.js';
 import { FIGHTER } from '../../../scripts/classes/fighter.js';
 import { MAGUS } from '../../../scripts/classes/magus.js';
+import { MYSTIC } from '../../../scripts/classes/mystic.js';
 import { SORCERER } from '../../../scripts/classes/sorcerer.js';
 import { TECHNOMANCER } from '../../../scripts/classes/technomancer.js';
 import { WIZARD } from '../../../scripts/classes/wizard.js';
@@ -328,6 +329,63 @@ describe('applySpells', () => {
     expect(actor.createEmbeddedDocuments).not.toHaveBeenCalledWith('Item', [
       expect.objectContaining({ name: 'Fear' }),
     ]);
+  });
+
+  test('adds a known repertoire spell again when it is learned at a higher rank', async () => {
+    const spellUuid = 'Compendium.pf2e.spells-srd.Item.planned-spell';
+    actor.items.push({
+      type: 'spell',
+      sourceId: spellUuid,
+      system: { level: { value: 1 }, location: { value: 'primary-entry' } },
+    });
+    global.fromUuid = jest.fn(async (uuid) => ({
+      uuid,
+      name: 'Fear',
+      system: { level: { value: 1 } },
+      toObject: () => ({ name: 'Fear', type: 'spell', system: { level: { value: 1 } } }),
+    }));
+
+    const added = await applySpells(actor, {
+      classSlug: 'sorcerer',
+      levels: { 3: { spells: [{ uuid: spellUuid, name: 'Fear', rank: 2, entryType: 'primary' }] } },
+    }, 3);
+
+    expect(added).toEqual(expect.arrayContaining([{ name: 'Fear', rank: 2 }]));
+    expect(actor.createEmbeddedDocuments).toHaveBeenCalledWith('Item', [
+      expect.objectContaining({
+        name: 'Fear',
+        system: expect.objectContaining({ location: expect.objectContaining({ heightenedLevel: 2 }) }),
+      }),
+    ]);
+  });
+
+  test('adds the mystic connection spell alongside the planned picks at a new rank', async () => {
+    ClassRegistry.register(MYSTIC);
+    const mysticActor = {
+      ...actor,
+      items: [
+        {
+          id: 'mystic-entry',
+          type: 'spellcastingEntry',
+          name: 'Mystic Spells',
+          system: { tradition: { value: 'occult' }, prepared: { value: 'spontaneous' }, ability: { value: 'wis' } },
+        },
+        { type: 'feat', slug: 'akashic', system: { traits: { otherTags: ['mystic-connection'] } } },
+      ],
+    };
+    global.fromUuid = jest.fn(async (uuid) => ({
+      uuid,
+      name: uuid.split('.').pop(),
+      system: { level: { value: 5 } },
+      toObject: () => ({ name: uuid.split('.').pop(), type: 'spell', system: { level: { value: 5 } } }),
+    }));
+    const picks = ['first-pick', 'second-pick'].map((id) => ({
+      uuid: `Compendium.sf2e.spells.Item.${id}`, name: id, rank: 5, entryType: 'primary',
+    }));
+
+    const added = await applySpells(mysticActor, { classSlug: 'mystic', levels: { 9: { spells: picks } } }, 9);
+
+    expect(added.map((spell) => spell.name)).toEqual(['first-pick', 'second-pick', 'kTzbLqmqPcZwOa5F']);
   });
 
   test('applies planned signature spells using native PF2e location metadata', async () => {
