@@ -733,6 +733,34 @@ describe('filterFeatsByCategory', () => {
     }
   });
 
+  test('ancestry feats whose only creature traits are effect traits stay open to every ancestry', () => {
+    const originalConfig = global.CONFIG;
+    global.CONFIG = {
+      ...(global.CONFIG ?? {}),
+      PF2E: {
+        ...(global.CONFIG?.PF2E ?? {}),
+        creatureTraits: { vesk: 'Vesk', kasatha: 'Kasatha', mental: 'Mental' },
+        ancestryTraits: { vesk: 'Vesk', kasatha: 'Kasatha' },
+        spellTraits: { mental: 'Mental', emotion: 'Emotion', fear: 'Fear' },
+      },
+    };
+
+    try {
+      const menacingSnarl = makeFeat('Menacing Snarl', 5, ['emotion', 'fear', 'mental']);
+      menacingSnarl.system.category = 'ancestry';
+      const kasathaFeat = makeFeat('Weightless Defense', 5, ['kasatha']);
+      kasathaFeat.system.category = 'ancestry';
+
+      const result = getFeatsForSelection([menacingSnarl, kasathaFeat], 'ancestry', { ancestry: { slug: 'vesk' } }, 5, {
+        buildState: { ancestryTraits: new Set(['vesk']) },
+      });
+
+      expect(result.map((feat) => feat.name)).toEqual(['Menacing Snarl']);
+    } finally {
+      global.CONFIG = originalConfig;
+    }
+  });
+
   test('getFeatsForSelection uses the secondary class for dual class feat queries', () => {
     const feats = [
       makeFeat('Reactive Shield', 1, ['fighter']),

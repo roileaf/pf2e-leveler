@@ -315,12 +315,14 @@ function getFeatUuid(feat) {
   );
 }
 
+// Creature traits that are also spell traits (mental, fear, fire...) describe what a feat does,
+// not who can take it, so Menacing Snarl's "mental" trait doesn't tie it to a creature type.
 function hasKnownCreatureTrait(traits) {
-  const creatureTraits = globalThis.CONFIG?.PF2E?.creatureTraits ?? {};
-  const ancestryTraits = globalThis.CONFIG?.PF2E?.ancestryTraits ?? {};
+  const { creatureTraits = {}, ancestryTraits = {}, spellTraits = {} } = globalThis.CONFIG?.PF2E ?? {};
+  const has = (record, trait) => Object.prototype.hasOwnProperty.call(record, trait);
   return traits.some((trait) =>
-    Object.prototype.hasOwnProperty.call(creatureTraits, trait)
-    || Object.prototype.hasOwnProperty.call(ancestryTraits, trait),
+    has(ancestryTraits, trait)
+    || (has(creatureTraits, trait) && !has(spellTraits, trait)),
   );
 }
 
