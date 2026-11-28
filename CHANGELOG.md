@@ -1,3 +1,9 @@
+## 3.12.40
+
+### Fixed
+
+- **Menacing Snarl is available again (Starfinder)** - The feat has no ancestry trait in the system data, and its "mental" trait was read as a creature type, so the feat picker hid it even with Eligible Only turned off. Traits like mental, fear and fire no longer restrict who can take an ancestry feat
+
 ## 3.12.39
 
 ### Fixed
