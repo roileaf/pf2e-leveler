@@ -1,3 +1,10 @@
+## 3.12.37
+
+### Fixed
+
+- **Virtuosic Performer offers its specialties again (Starfinder)** - The "Dance" specialty was mistaken for the soldier feat Dance!, so the planner asked you to browse for a feat instead of picking a performance type
+- **Double Draw and All Hands on Deck accept multi-armed characters** - "three or more hands" is now understood. Kasatha, shobhad, skittermanders, Test-Subject Ysoki and characters with feats that add arms meet it
+
 ## 3.12.36
 
 ### Fixed
