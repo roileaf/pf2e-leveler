@@ -1,3 +1,9 @@
+## 3.12.39
+
+### Fixed
+
+- **Partial Intelligence boosts no longer offer extra skills and languages** - Foundry rounds a partial +4½ Intelligence down to +4, and after reopening the planner it mistook an applied partial boost for a full one. Intelligence is now worked out from your actual boost choices
+
 ## 3.12.38
 
 ### Fixed
